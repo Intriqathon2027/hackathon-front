@@ -123,7 +123,7 @@ export default {
     title: 'PARTNERS',
   },
   announcements: {
-    lastAnnouncements: 'Last Announcements',
+    lastAnnouncements: 'Last Announcements a',
     title: "Announcement's title",
     addTitle: 'Create Announcement',
     content: 'Content',

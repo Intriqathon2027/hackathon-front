@@ -127,7 +127,7 @@ export default {
     title: 'PARTENAIRES',
   },
   announcements: {
-    lastAnnouncements: 'Dernières Annonces',
+    lastAnnouncements: 'Dernières Annonces a',
     title: "Titre de l'annonce",
     content: "Contenu de l'annonce",
     tags: 'Tags',
