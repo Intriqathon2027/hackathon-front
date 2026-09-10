@@ -21,8 +21,9 @@ export function calculateAllTeamsConstraints(teams: TeamDTO[], config: Matchmaki
 
 /**
  * Filters the given teams to return only those eligible for the given user.
- * If the user has no favoriteSubjectId, they are eligible for all teams
- * (subject to constraint checks).
+ * Only the favorite subject of the user (the first one of their ranking) is
+ * taken into account. If the user has not ranked the subjects yet, they are
+ * eligible for all teams (subject to constraint checks).
  * * @param teams
  * @param user
  * @param config
@@ -48,8 +49,9 @@ export function getEligibleTeamsForUser(
     return filteredTeams
   }
 
-  const teamsBySubject = user.favoriteSubjectId
-    ? filteredTeams.filter((team) => team.subjectId === user.favoriteSubjectId)
+  const favoriteSubjectId = user.favoriteSubjectIds?.[0]
+  const teamsBySubject = favoriteSubjectId
+    ? filteredTeams.filter((team) => team.subjectId === favoriteSubjectId)
     : filteredTeams
 
   return teamsBySubject.filter((team: TeamDTO) => {

@@ -22,6 +22,7 @@
     { path: '/user/team', label: `${tPrefix}.nav.teams` },
     { path: '/user/project', label: `${tPrefix}.nav.projects` },
     { path: '/user/faq', label: `${tPrefix}.nav.faq` },
+    { path: '/user/subject-ranking', label: `${tPrefix}.nav.subjectRanking` },
   ]
 
   const getLinkClasses = (path: string) => {

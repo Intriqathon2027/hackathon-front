@@ -53,7 +53,7 @@
 
   const topicSelectedCount = computed(() => {
     return users.value.filter(
-      (user) => user.role === UserRole.PARTICIPANT && user.favoriteSubjectId !== null
+      (user) => user.role === UserRole.PARTICIPANT && (user.favoriteSubjectIds?.length ?? 0) > 0
     ).length
   })
 
@@ -96,7 +96,8 @@
     const counts = new Map<string, number>()
 
     users.value.forEach((user) => {
-      const subjectId = user.favoriteSubjectId
+      // Only the favorite subject (first of the ranking) is counted
+      const subjectId = user.favoriteSubjectIds?.[0]
       if (subjectId) {
         counts.set(subjectId, (counts.get(subjectId) || 0) + 1)
       }
