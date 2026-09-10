@@ -267,7 +267,7 @@
     :edit-mode="editMode"
     :team="selectedTeam"
     :themes="themes"
-    :subject-id="user?.favoriteSubjectId || null"
+    :subject-id="user?.favoriteSubjectIds?.[0] || null"
   />
 
   <div v-if="loadingTeams" class="text-center py-12">

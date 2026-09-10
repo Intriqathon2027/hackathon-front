@@ -155,12 +155,12 @@ import { TeamStatus } from '@/types/team_status'
             ></v-icon>
           </td>
           <td class="px-4 py-2 text-center">
-            <div v-if="user.favoriteSubjectId">
+            <div v-if="user.favoriteSubjectIds?.length">
               <div class="font-medium">
-                {{ getTheme(user.favoriteSubjectId) }}
+                {{ getTheme(user.favoriteSubjectIds[0]) }}
               </div>
               <div class="text-sm text-gray-600">
-                {{ getSubject(user.favoriteSubjectId) }}
+                {{ getSubject(user.favoriteSubjectIds[0]) }}
               </div>
             </div>
             <div v-else>-</div>

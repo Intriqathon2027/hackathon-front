@@ -3,36 +3,16 @@
   import { TaskKey } from '@/types/hackathon_phase'
   import { useAuthStore } from '@/stores/auth'
   import { storeToRefs } from 'pinia'
-  import { computed, ref } from 'vue'
+  import { computed, onMounted } from 'vue'
+  import { useRouter } from 'vue-router'
   import { useConfiguration } from '@/composables/useConfiguration'
   import { ConfigurationKey } from '@/utils/configuration/configurationKey'
   import { ThemesDTO } from '@/types/config'
   import type { ConfigurationResponse } from '@/types/config'
-  import { UserDTO } from '@/types/user'
   import { userService } from '@/services/userService'
-  import AppSnackbar from '../common/AppSnackbar.vue'
-  import ConfirmDialog from '../common/ConfirmDialog.vue'
 
   const { t, tm } = useI18n()
-
-  // Confirmation Dialog
-  const showConfirmModal = ref(false)
-
-  const openConfirmation = () => {
-    if (selectedSubjectId.value && isSelectionChanged.value) {
-      showConfirmModal.value = true
-    }
-  }
-
-  const onConfirmSave = () => {
-    handleSave(user.value!)
-  }
-
-  // Snackbar
-  const snackbar = ref(false)
-  const text = ref('')
-  const timeout = ref(1500)
-  const error = ref(false)
+  const router = useRouter()
 
   const authStore = useAuthStore()
   const { user } = storeToRefs(authStore)
@@ -44,21 +24,22 @@
       | undefined
   })
 
-  const initialFavoriteSubjectId = user?.value?.favoriteSubjectId || null
-  const selectedSubjectId = ref<string | null>(initialFavoriteSubjectId)
-  const isSaving = ref(false)
-
-  const isCompleted = computed<boolean>(() => {
-    return user?.value?.favoriteSubjectId !== null && user?.value?.favoriteSubjectId !== undefined
+  // The ranking may have been updated from another device, refresh it on mount.
+  onMounted(async () => {
+    if (!user.value?.id) return
+    try {
+      const freshUser = await userService.getById(user.value.id)
+      updateUserFields(freshUser)
+    } catch (err) {
+      console.error('Error loading user:', err)
+    }
   })
 
-  const isSelectionChanged = computed<boolean>(() => {
-    return selectedSubjectId.value !== user?.value?.favoriteSubjectId
-  })
+  const rankedSubjectIds = computed<string[]>(() => user.value?.favoriteSubjectIds ?? [])
 
-  const { configuration: themesConfiguration, loading: isThemesLoading } = useConfiguration(
-    ConfigurationKey.THEMES
-  )
+  const isCompleted = computed<boolean>(() => rankedSubjectIds.value.length > 0)
+
+  const { configuration: themesConfiguration } = useConfiguration(ConfigurationKey.THEMES)
 
   const themes = computed<ThemesDTO[]>(() => {
     const config = themesConfiguration.value as ConfigurationResponse | null
@@ -71,39 +52,23 @@
     return []
   })
 
-  const handleSave = async (userToUpdate: UserDTO) => {
-    if (!selectedSubjectId.value) return
+  const subjectNamesById = computed<Map<string, string>>(() => {
+    const names = new Map<string, string>()
+    themes.value.forEach((theme) => {
+      theme.subjects.forEach((subject) => names.set(subject.id, subject.name))
+    })
+    return names
+  })
 
-    showConfirmModal.value = false
-    isSaving.value = true
-    try {
-      const updatePayload = {
-        favoriteSubjectId: selectedSubjectId.value,
-      }
-      const savedUser = await userService.update(userToUpdate.id, updatePayload)
+  /** Ranked subject names, ordered by decreasing preference. */
+  const rankedSubjectNames = computed<string[]>(() =>
+    rankedSubjectIds.value
+      .map((id) => subjectNamesById.value.get(id))
+      .filter((name): name is string => name !== undefined)
+  )
 
-      updateUserFields(savedUser)
-      selectedSubjectId.value = savedUser.favoriteSubjectId || null
-
-      text.value = t('common.changesSaved')
-      error.value = false
-      snackbar.value = true
-    } catch (err) {
-      console.error('Error saving user:', err)
-      text.value = t('errors.loadUserFailed')
-      error.value = true
-      snackbar.value = true
-    } finally {
-      isSaving.value = false
-    }
-  }
-
-  /**
-   * Définit le sujet sélectionné pour la radio-bouton
-   * @param subjectId L'ID du sujet cliqué.
-   */
-  const selectSubject = (subjectId: string) => {
-    selectedSubjectId.value = subjectId
+  const goToRanking = () => {
+    router.push({ name: 'SubjectRankingPage' })
   }
 </script>
 
@@ -125,110 +90,32 @@
       </v-chip>
     </div>
 
-    <div v-if="!isCompleted">
-      <div v-if="taskData">
-        <p class="text-medium-emphasis mb-4">
-          {{ taskData.description || '' }}
-        </p>
+    <p class="text-medium-emphasis mb-4">
+      {{ taskData?.description || '' }}
+    </p>
 
-        <div v-if="!isCompleted || isSelectionChanged">
-          <h4 class="text-subtitle-1 font-weight-bold mb-4">
-            {{ t('dashboard.participant.topic_selection.actionTitle') }} :
-          </h4>
-        </div>
-      </div>
+    <div v-if="isCompleted && rankedSubjectNames.length > 0">
+      <p class="mb-2">
+        {{ t('dashboard.participant.topic_selection.favoriteTopicLabel') }}
+        <strong>{{ rankedSubjectNames[0] }}</strong>
+      </p>
 
-      <div v-if="themes.length > 0" class="space-y-6">
-        <v-expansion-panels variant="accordion">
-          <v-expansion-panel v-for="theme in themes" :key="theme.id">
-            <v-expansion-panel-title>
-              <div>{{ theme.name }}</div>
-            </v-expansion-panel-title>
-
-            <v-expansion-panel-text>
-              <p class="text-medium-emphasis mb-4">{{ theme.description }}</p>
-
-              <div v-if="theme.subjects && theme.subjects.length > 0" class="space-y-4">
-                <v-card
-                  v-for="subject in theme.subjects"
-                  :key="subject.id"
-                  :color="selectedSubjectId === subject.id ? 'primary' : ''"
-                  :variant="selectedSubjectId === subject.id ? 'tonal' : 'outlined'"
-                  class="cursor-pointer"
-                  @click="selectSubject(subject.id)"
-                >
-                  <v-card-title class="font-weight-medium text-body-1 d-flex align-center">
-                    <v-radio
-                      :value="subject.id"
-                      :model-value="selectedSubjectId"
-                      @click.stop="selectSubject(subject.id)"
-                      class="mr-2"
-                      hide-details
-                    ></v-radio>
-                    {{ subject.name }}
-                  </v-card-title>
-                  <v-card-text>
-                    {{ subject.description }}
-                  </v-card-text>
-                </v-card>
-              </div>
-              <div v-else>
-                <p class="text-medium-emphasis">{{ t('common.no_subjects_available') }}</p>
-              </div>
-            </v-expansion-panel-text>
-          </v-expansion-panel>
-        </v-expansion-panels>
-      </div>
-
-      <div v-else class="text-center py-8">
-        <v-progress-circular
-          v-if="isThemesLoading"
-          indeterminate
-          color="primary"
-        ></v-progress-circular>
-        <p v-else class="text-medium-emphasis">{{ t('common.no_themes_available') }}</p>
-      </div>
-
-      <div class="mt-8 d-flex justify-end">
-        <v-btn
-          color="primary"
-          :loading="isSaving"
-          :disabled="!selectedSubjectId || !isSelectionChanged"
-          @click="openConfirmation"
-        >
-          {{ t('common.save') }}
-        </v-btn>
-      </div>
+      <p class="text-subtitle-2 font-weight-bold mb-1">
+        {{ t('dashboard.participant.topic_selection.rankingLabel') }}
+      </p>
+      <ol class="list-decimal pl-6 text-medium-emphasis">
+        <li v-for="name in rankedSubjectNames" :key="name">{{ name }}</li>
+      </ol>
     </div>
 
-    <div v-else>
-      <p>
-        {{ t('dashboard.participant.topic_selection.selectedTopic') }}
-        <strong>
-          {{
-            themes
-              .flatMap((theme) => theme.subjects)
-              .find((subject) => subject.id === user?.favoriteSubjectId)?.name || ''
-          }}
-        </strong>
-      </p>
+    <div class="mt-6 d-flex justify-end">
+      <v-btn color="primary" @click="goToRanking">
+        {{
+          isCompleted
+            ? t('dashboard.participant.topic_selection.updateRanking')
+            : t('dashboard.participant.topic_selection.goToRanking')
+        }}
+      </v-btn>
     </div>
   </div>
-
-  <ConfirmDialog
-    v-model="showConfirmModal"
-    :title="t('dashboard.participant.topic_selection.confirmationTitle')"
-    :text="t('dashboard.participant.topic_selection.confirmationText')"
-    :secondary-text="
-      t('dashboard.participant.topic_selection.selectedTopicLabel') +
-      ' ' +
-      (themes.flatMap((theme) => theme.subjects).find((subject) => subject.id === selectedSubjectId)
-        ?.name || '')
-    "
-    :confirm-label="t('common.validate')"
-    :cancel-label="t('common.cancel')"
-    @confirm="onConfirmSave"
-  />
-
-  <AppSnackbar v-model="snackbar" :message="text" :timeout="timeout" :error="error" />
 </template>

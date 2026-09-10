@@ -16,7 +16,7 @@ export interface UserDTO {
   discord?: SocialMediaDTO 
   profilePicturePath?: string | null
   teamId: string | null
-  favoriteSubjectId?: string
+  favoriteSubjectIds?: string[]
 }
 
 export interface UserReducedDTO {
@@ -26,7 +26,7 @@ export interface UserReducedDTO {
   email: string
   role: Role
   school?: string | null
-  favoriteSubjectId?: string | null
+  favoriteSubjectIds?: string[]
   teamId?: string | null
   team ? : {
     id: string
@@ -54,7 +54,7 @@ export interface UserReducedDTO {
   email: string
   role: Role
   school?: string | null
-  favoriteSubjectId?: string | null
+  favoriteSubjectIds?: string[]
   teamId?: string | null
 }
 
