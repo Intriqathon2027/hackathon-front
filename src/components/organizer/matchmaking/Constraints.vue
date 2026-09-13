@@ -5,13 +5,14 @@
   import ConstraintForm from './ConstraintForm.vue'
   import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
-  const { t } = useI18n()
+  const { t } = useI18n({ useScope: 'global' })
 
   const props = defineProps<{
     constraints: ConstraintDTO[]
     itemsPerPage?: number
     schoolNames?: string[]
     maxTeamSize?: number
+    disabled?: boolean
   }>()
 
   const emit = defineEmits<{
@@ -103,6 +104,7 @@
               color="primary"
               variant="text"
               size="small"
+              :disabled="props.disabled"
               @click.stop="
                 showEditForm = true ;
                 editedConstraint = { ...criterion, index }
@@ -113,6 +115,7 @@
               color="red"
               variant="text"
               size="small"
+              :disabled="props.disabled"
               @click.stop="confirmDelete(criterion)"
             />
           </td>

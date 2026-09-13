@@ -109,8 +109,8 @@ export const useTeamStore = defineStore('team', {
     /**
      * Autogenerate teams based on unassigned users.
      */
-    async autogenerateTeams(): Promise<number> {
-      const res = await teamService.autogenerateTeams()
+    async autogenerateTeams(algorithm?: string): Promise<number> {
+      const res = await teamService.autogenerateTeams(algorithm)
       await this.fetchTeams()
       return res
     },

@@ -95,11 +95,16 @@ export interface ConstraintDTO {
   multiple: boolean
 }
 
+export type MatchmakingAlgorithm = 'manual' | 'legacy' | 'new'
+
 export interface MatchmakingSettingsDTO {
   isActive: boolean
   teamSizeMin: number
   teamSizeMax: number
+  maxTeamsPerSubject: number
+  maxTeamsPerTopic?: number
   constraints: ConstraintDTO[]
+  algorithm?: MatchmakingAlgorithm
 }
 
 export interface TeamConstraintViolation {

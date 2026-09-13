@@ -206,6 +206,7 @@ export const defaultConfigurations = {
     isActive: false,
     teamSizeMin: 1,
     teamSizeMax: 1,
+    maxTeamsPerSubject: 2,
     constraints: [],
   },
   [ConfigurationKey.THEMES]: [],

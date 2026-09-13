@@ -73,8 +73,12 @@ export const teamService = {
     return res.data
   },
 
-  async autogenerateTeams(): Promise<number> {
-    const res = await axios.post(`${API_URL}/autogenerate`, {}, { headers: getAuthHeaders() })
+  async autogenerateTeams(algorithm?: string): Promise<number> {
+    const res = await axios.post(
+      `${API_URL}/autogenerate`,
+      algorithm ? { algorithm } : {},
+      { headers: getAuthHeaders() }
+    )
     return res.data.count
   }
 }

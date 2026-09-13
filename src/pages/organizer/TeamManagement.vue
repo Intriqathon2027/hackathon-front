@@ -6,7 +6,8 @@
   import { UserRole } from '@/types/roles'
   import { UserReducedDTO } from '@/types/user'
   import { userService } from '@/services/userService'
-  import { MatchmakingSettingsDTO, PartnersDTO, ThemesDTO } from '@/types/config'
+  import { MatchmakingAlgorithm, MatchmakingSettingsDTO, PartnersDTO, ThemesDTO } from '@/types/config'
+import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingConfig.vue'
   import { configurationService } from '@/services/configurationService'
   import { ConfigurationKey } from '@/utils/configuration/configurationKey'
   import TeamTable from '@/components/organizer/team_management/TeamTable.vue'
@@ -21,7 +22,7 @@
   import { useTeamStore } from '@/stores/teamStore'
   import { githubService } from '@/services/githubService'
 
-  const { t } = useI18n()
+  const { t, locale } = useI18n({ useScope: 'global' })
 
   // ---- PINIA STORE ----
   const teamStore = useTeamStore()
@@ -221,20 +222,65 @@
     }
   }
 
-  // ------ CONSTRAINTS ------
+  // ------ CONSTRAINTS & MATCHMAKING ------
   const matchmakingConfig = ref<MatchmakingSettingsDTO | null>(null)
   const teamConstraintsMap = ref<Record<string, TeamConstraintViolation[]>>({})
+  const selectedAlgorithm = ref<MatchmakingAlgorithm>('legacy')
+
+  const algorithmOptions = computed(() => {
+    // Explicitly track locale to update options when language changes
+    const _locale = locale.value
+    return [
+      {
+        value: 'manual' as MatchmakingAlgorithm,
+        title: t('organizer.teamManagement.modes.manual.title'),
+        description: t('organizer.teamManagement.modes.manual.description'),
+        icon: 'mdi-account-edit-outline',
+        color: 'amber',
+      },
+      {
+        value: 'legacy' as MatchmakingAlgorithm,
+        title: t('organizer.teamManagement.modes.legacy.title'),
+        description: t('organizer.teamManagement.modes.legacy.description'),
+        icon: 'mdi-history',
+        color: 'blue',
+      },
+      {
+        value: 'new' as MatchmakingAlgorithm,
+        title: t('organizer.teamManagement.modes.new.title'),
+        description: t('organizer.teamManagement.modes.new.description'),
+        icon: 'mdi-creation-outline',
+        color: 'purple',
+      },
+    ]
+  })
+
+  const currentAlgorithm = computed(
+    () =>
+      algorithmOptions.value.find((opt) => opt.value === selectedAlgorithm.value) ||
+      algorithmOptions.value[1]
+  )
 
   const schools = ref<string[]>([])
 
   const updateConstraints = () => {
-    if (matchmakingConfig.value && matchmakingConfig.value.isActive) {
-      const result = calculateAllTeamsConstraints(teams.value, matchmakingConfig.value)
+    if (matchmakingConfig.value) {
+      const result = calculateAllTeamsConstraints(teams.value, { ...matchmakingConfig.value, isActive: true })
       teamConstraintsMap.value = result.reduce(
         (acc, r) => ((acc[r.teamId] = r.violations), acc),
         {} as Record<string, TeamConstraintViolation[]>
       )
+    } else {
+      teamConstraintsMap.value = {}
     }
+  }
+
+  const onMatchmakingConfigSaved = (updatedConfig: MatchmakingSettingsDTO) => {
+    matchmakingConfig.value = updatedConfig
+    if (updatedConfig.algorithm) {
+      selectedAlgorithm.value = updatedConfig.algorithm
+    }
+    updateConstraints()
   }
 
   watch([teams, matchmakingConfig], updateConstraints, { deep: true, immediate: true })
@@ -266,7 +312,12 @@
 
   const fetchMatchmakingConfig = async () => {
     const response = await configurationService.findOne(ConfigurationKey.MATCHMAKING)
-    if (response?.value) matchmakingConfig.value = response.value
+    if (response?.value) {
+      matchmakingConfig.value = response.value
+      if (response.value.algorithm) {
+        selectedAlgorithm.value = response.value.algorithm
+      }
+    }
   }
 
   const fetchSchools = async () => {
@@ -289,7 +340,7 @@
     showAutogenerateResult.value = false
     teamsCreated.value = 0
     try {
-      const res = await teamStore.autogenerateTeams()
+      const res = await teamStore.autogenerateTeams(selectedAlgorithm.value)
       teamsCreated.value = res
 
       text.value = t('organizer.teamManagement.teamAutogenerateSuccess', { count: res })
@@ -305,6 +356,14 @@
     } finally {
       autogenerating.value = false
       showAutogenerateResult.value = true
+    }
+  }
+
+  const handleCreateTeams = () => {
+    if (selectedAlgorithm.value === 'manual') {
+      onAddTeam()
+    } else {
+      autogenerateTeams()
     }
   }
 
@@ -343,12 +402,32 @@
     }
   }
 
-  onMounted(() => {
-    fetchUsers()
-    fetchThemes()
-    fetchMatchmakingConfig()
-    fetchSchools()
-    teamStore.fetchTeams()
+  onMounted(async () => {
+    try {
+      await fetchUsers()
+    } catch (e) {
+      console.warn('Error fetching users:', e)
+    }
+    try {
+      await fetchThemes()
+    } catch (e) {
+      console.warn('Error fetching themes:', e)
+    }
+    try {
+      await fetchMatchmakingConfig()
+    } catch (e) {
+      console.warn('Error fetching matchmaking config:', e)
+    }
+    try {
+      await fetchSchools()
+    } catch (e) {
+      console.warn('Error fetching schools:', e)
+    }
+    try {
+      await teamStore.fetchTeams()
+    } catch (e) {
+      console.warn('Error fetching teams:', e)
+    }
   })
 
   // FILTERED TEAMS OR USERS
@@ -377,36 +456,124 @@
 </script>
 
 <template>
-  <v-container>
-    <v-row justify="center" class="mt-8">
-      <div class="w-full md:w-8/12 lg:w-9/12 px-4">
-        <div class="flex w-full justify-between items-center mb-6">
-          <h1 class="text-3xl font-bold">{{ t('organizer.teamManagement.title') }}</h1>
-          <v-btn color="primary" class="h-full" @click="onAddTeam">
-            {{ t('organizer.teamManagement.actions.add') }}
-          </v-btn>
+  <v-container class="py-8 max-w-7xl mx-auto">
+    <div class="px-2 sm:px-4">
+      <!-- 1. Main Title -->
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          {{ t('organizer.teamManagement.title') }}
+        </h1>
+      </div>
+
+      <!-- 2. Algorithm Description (Left) & Mode Dropdown (Right) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8 items-stretch">
+        <!-- Left: Algorithm Description -->
+        <div class="lg:col-span-8 bg-white dark:bg-slate-800 rounded-xl p-6 border-2 border-slate-300 dark:border-slate-700 shadow-xs flex flex-col justify-center">
+          <div class="flex items-center gap-3 mb-3">
+            <v-avatar :color="currentAlgorithm.color + '-lighten-5'" size="42" class="border">
+              <v-icon :color="currentAlgorithm.color + '-darken-2'" size="24">{{ currentAlgorithm.icon }}</v-icon>
+            </v-avatar>
+            <div>
+              <span class="text-xs uppercase tracking-wider font-semibold text-slate-400">{{ t('organizer.teamManagement.activeAlgorithm') }}</span>
+              <h3 class="text-lg font-bold text-slate-800 dark:text-white leading-tight">
+                {{ currentAlgorithm.title }}
+              </h3>
+            </div>
+          </div>
+          <p class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+            {{ currentAlgorithm.description }}
+          </p>
         </div>
 
-        <div class="flex flex-col gap-2 mb-4">
-          <v-btn color="secondary" @click="autogenerateTeams" :disabled="loadingTeams">
-            {{ t('organizer.teamManagement.actions.autogenerate') }}
-          </v-btn>
-          <v-btn color="black" @click="confirmInitializeRepos" :loading="isInitializingRepos" :disabled="loadingTeams">
-             <v-icon start>mdi-github</v-icon>
-             {{ t('organizer.teamManagement.actions.createGitHubRepos') }}
-          </v-btn>
+        <!-- Right: Mode Dropdown Selector -->
+        <div class="lg:col-span-4 bg-white dark:bg-slate-800 rounded-xl p-6 border-2 border-slate-300 dark:border-slate-700 shadow-xs flex flex-col justify-center">
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+            {{ t('organizer.teamManagement.modes.label') }}
+          </label>
+          <v-select
+            v-model="selectedAlgorithm"
+            :items="algorithmOptions"
+            item-value="value"
+            item-title="title"
+            variant="outlined"
+            density="comfortable"
+            hide-details
+          >
+            <template #selection="{ item }">
+              <div class="flex items-center gap-2">
+                <v-icon :color="item.raw.color" size="20">{{ item.raw.icon }}</v-icon>
+                <span class="font-medium text-slate-800 dark:text-white">{{ item.raw.title }}</span>
+              </div>
+            </template>
+            <template #item="{ item, props: itemProps }">
+              <v-list-item v-bind="itemProps" :title="undefined">
+                <template #prepend>
+                  <v-icon :color="item.raw.color" size="20" class="mr-2">{{ item.raw.icon }}</v-icon>
+                </template>
+                <v-list-item-title class="font-medium text-sm">
+                  {{ item.raw.title }}
+                </v-list-item-title>
+              </v-list-item>
+            </template>
+          </v-select>
         </div>
+      </div>
 
-        <ConfirmDialog
-          v-model="showRepoConfirmModal"
-          :title="t('organizer.teamManagement.confirmRepoDialog.title')"
-          :text="t('organizer.teamManagement.confirmRepoDialog.message')"
-          :secondary-text="repoWarningMessage"
-          :confirm-label="t('organizer.teamManagement.confirmRepoDialog.confirm')"
-          :cancel-label="t('common.cancel')"
-          @confirm="handleConfirmRepos"
+      <!-- 3. Configuration of Selected Mode (Matchmaking) -->
+      <div class="mb-8">
+        <MatchmakingConfig
+          :algorithm-mode="selectedAlgorithm"
+          @update:algorithm-mode="(mode) => (selectedAlgorithm = mode)"
+          @saved="onMatchmakingConfigSaved"
         />
+      </div>
 
+      <!-- 4. In-line Action Buttons: Create repos & Create Team(s) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        <!-- Button 1: Create repos -->
+        <v-btn
+          color="black"
+          size="large"
+          class="h-12 text-base font-semibold"
+          @click="confirmInitializeRepos"
+          :loading="isInitializingRepos"
+          :disabled="loadingTeams"
+        >
+          <v-icon start size="22">mdi-github</v-icon>
+          {{ t('organizer.teamManagement.actions.createRepos') }}
+        </v-btn>
+
+        <!-- Button 2: Create Team(s) -->
+        <div class="flex gap-2">
+          <v-btn
+            color="primary"
+            size="large"
+            class="h-12 text-base font-semibold flex-1"
+            @click="handleCreateTeams"
+            :loading="autogenerating"
+            :disabled="loadingTeams"
+          >
+            <v-icon start size="22">{{ selectedAlgorithm === 'manual' ? 'mdi-account-plus' : 'mdi-auto-fix' }}</v-icon>
+            {{ selectedAlgorithm === 'manual' ? t('organizer.teamManagement.actions.add') : t('organizer.teamManagement.actions.createTeams') }}
+          </v-btn>
+
+          <!-- Secondary manual add button in auto mode so organizer is never blocked -->
+          <v-btn
+            v-if="selectedAlgorithm !== 'manual'"
+            color="primary"
+            variant="tonal"
+            size="large"
+            class="h-12 px-3"
+            @click="onAddTeam"
+            :title="t('organizer.teamManagement.actions.createTeamManual')"
+          >
+            <v-icon>mdi-plus</v-icon>
+          </v-btn>
+        </div>
+      </div>
+
+      <!-- 5. Teams (liste) -->
+      <div class="border-t border-slate-200 dark:border-slate-800 pt-6">
         <TeamFilters
           v-model:view-mode="viewMode"
           v-model:selectedTeamStatus="selectedTeamStatus"
@@ -417,7 +584,51 @@
           v-model:selectedSchool="selectedSchool"
           :schools="schools"
         />
+
+        <div class="mt-6">
+          <TeamTable
+            v-if="viewMode === 'team' && !loadingTeams && filteredTeams.length > 0"
+            :teams="filteredTeams"
+            :themes="themes"
+            :constraints-map="teamConstraintsMap"
+            @edit="onEditTeam"
+            @toggle-constraints="toggleConstraints"
+            @toggle-lock="updateLockStatus"
+          />
+
+          <div v-else-if="viewMode === 'team' && loadingTeams" class="text-center py-12">
+            <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
+          </div>
+
+          <div
+            v-else-if="viewMode === 'team' && !loadingTeams && filteredTeams.length === 0"
+            class="text-center py-12"
+          >
+            {{ t('organizer.teamManagement.noTeams') }}
+          </div>
+
+          <UsersTable
+            v-if="viewMode === 'individual'"
+            :users="filteredUsers"
+            :themes="themes"
+            :teams="teams"
+            :config="matchmakingConfig"
+            @assign-team="assignToTeam"
+            @withdraw-team="withdrawFromTeam"
+          />
+        </div>
       </div>
+
+      <!-- Modals and Dialogs -->
+      <ConfirmDialog
+        v-model="showRepoConfirmModal"
+        :title="t('organizer.teamManagement.confirmRepoDialog.title')"
+        :text="t('organizer.teamManagement.confirmRepoDialog.message')"
+        :secondary-text="repoWarningMessage"
+        :confirm-label="t('organizer.teamManagement.confirmRepoDialog.confirm')"
+        :cancel-label="t('common.cancel')"
+        @confirm="handleConfirmRepos"
+      />
 
       <TeamForm
         v-model="showTeamForm"
@@ -430,42 +641,7 @@
         :juries="juries"
         :themes="themes"
       />
-    </v-row>
-
-    <v-row justify="center" class="mb-12">
-      <div class="w-full md:w-8/12 lg:w-9/12 px-4">
-        <TeamTable
-          v-if="viewMode === 'team' && !loadingTeams && filteredTeams.length > 0"
-          :teams="filteredTeams"
-          :themes="themes"
-          :constraints-map="teamConstraintsMap"
-          @edit="onEditTeam"
-          @toggle-constraints="toggleConstraints"
-          @toggle-lock="updateLockStatus"
-        />
-
-        <div v-else-if="viewMode === 'team' && loadingTeams" class="text-center py-12">
-          <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
-        </div>
-
-        <div
-          v-else-if="viewMode === 'team' && !loadingTeams && filteredTeams.length === 0"
-          class="text-center py-12"
-        >
-          {{ t('organizer.teamManagement.noTeams') }}
-        </div>
-
-        <UsersTable
-          v-if="viewMode === 'individual'"
-          :users="filteredUsers"
-          :themes="themes"
-          :teams="teams"
-          :config="matchmakingConfig"
-          @assign-team="assignToTeam"
-          @withdraw-team="withdrawFromTeam"
-        />
-      </div>
-    </v-row>
+    </div>
 
     <AppSnackbar v-model="snackbar" :message="text" :timeout="timeout" :error="error" />
 

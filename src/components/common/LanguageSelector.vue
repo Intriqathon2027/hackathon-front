@@ -2,7 +2,7 @@
   import { useI18n } from 'vue-i18n'
   import { watch } from 'vue'
 
-  const { locale } = useI18n()
+  const { locale } = useI18n({ useScope: 'global' })
   watch(locale, (newLocale) => {
     localStorage.setItem('lang', newLocale)
   })
