@@ -90,22 +90,30 @@ watch(
   { immediate: true }
 )
 
+// Normalize removed algorithm values to valid ones
+const normalizeAlgorithm = (algo: string): MatchmakingAlgorithm => {
+  if (algo === 'legacy') return 'new'
+  if (algo === 'manual' || algo === 'new') return algo
+  return 'manual'
+}
+
 // Populate matchmaking settings from configuration
 watch(
   matchmakingConfig,
   (newConfig) => {
     if (newConfig && newConfig.value) {
       const val = newConfig.value as MatchmakingSettingsDTO & { maxTeamsPerTopic?: number }
+      const normalizedAlgo = normalizeAlgorithm(val.algorithm ?? props.algorithmMode)
       matchmakingSettings.value = {
         isActive: true,
         teamSizeMin: val.teamSizeMin ?? 1,
         teamSizeMax: val.teamSizeMax ?? 4,
         maxTeamsPerSubject: val.maxTeamsPerSubject ?? val.maxTeamsPerTopic ?? 2,
         constraints: val.constraints ? [...val.constraints] : [],
-        algorithm: val.algorithm ?? props.algorithmMode,
+        algorithm: normalizedAlgo,
       }
-      if (val.algorithm && val.algorithm !== props.algorithmMode) {
-        emit('update:algorithmMode', val.algorithm)
+      if (normalizedAlgo !== props.algorithmMode) {
+        emit('update:algorithmMode', normalizedAlgo)
       }
     }
   },
@@ -339,16 +347,7 @@ const updateConstraint = (index: number | undefined, updatedCriterion: Constrain
       </div>
     </div>
 
-    <div
-      v-else-if="algorithmMode === 'legacy'"
-      class="mb-6 p-4 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 flex items-start gap-3"
-    >
-      <v-icon color="blue-darken-2" class="mt-0.5">mdi-history</v-icon>
-      <div class="text-sm">
-        <span class="font-semibold">{{ t('organizer.teamManagement.modes.legacy.title') }} : </span>
-        {{ t('organizer.teamManagement.modes.legacy.configNotice') }}
-      </div>
-    </div>
+
 
     <div
       v-else-if="algorithmMode === 'manual'"

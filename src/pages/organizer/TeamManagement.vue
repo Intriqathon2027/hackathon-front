@@ -226,7 +226,14 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
   // ------ CONSTRAINTS & MATCHMAKING ------
   const matchmakingConfig = ref<MatchmakingSettingsDTO | null>(null)
   const teamConstraintsMap = ref<Record<string, TeamConstraintViolation[]>>({})
-  const selectedAlgorithm = ref<MatchmakingAlgorithm>('legacy')
+  const selectedAlgorithm = ref<MatchmakingAlgorithm>('manual')
+
+  // Map removed algorithm values to valid ones
+  const normalizeAlgorithm = (algo: string): MatchmakingAlgorithm => {
+    if (algo === 'legacy') return 'new'
+    if (algo === 'manual' || algo === 'new') return algo
+    return 'manual'
+  }
 
   const algorithmOptions = computed(() => {
     // Explicitly track locale to update options when language changes
@@ -238,13 +245,6 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
         description: t('organizer.teamManagement.modes.manual.description'),
         icon: 'mdi-account-edit-outline',
         color: 'amber',
-      },
-      {
-        value: 'legacy' as MatchmakingAlgorithm,
-        title: t('organizer.teamManagement.modes.legacy.title'),
-        description: t('organizer.teamManagement.modes.legacy.description'),
-        icon: 'mdi-history',
-        color: 'blue',
       },
       {
         value: 'new' as MatchmakingAlgorithm,
@@ -259,7 +259,7 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
   const currentAlgorithm = computed(
     () =>
       algorithmOptions.value.find((opt) => opt.value === selectedAlgorithm.value) ||
-      algorithmOptions.value[1]
+      algorithmOptions.value[0]
   )
 
   const schools = ref<string[]>([])
@@ -317,7 +317,7 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
       if (response?.value) {
         matchmakingConfig.value = response.value
         if (response.value.algorithm) {
-          selectedAlgorithm.value = response.value.algorithm
+          selectedAlgorithm.value = normalizeAlgorithm(response.value.algorithm)
         }
         return
       }
@@ -332,7 +332,7 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
           const val = JSON.parse(local)
           matchmakingConfig.value = val
           if (val.algorithm) {
-            selectedAlgorithm.value = val.algorithm
+            selectedAlgorithm.value = normalizeAlgorithm(val.algorithm)
           }
         } catch (e) {}
       }
@@ -519,8 +519,8 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
         </div>
 
         <!-- Right: Mode Dropdown Selector -->
-        <div class="lg:col-span-4 bg-white dark:bg-slate-800 rounded-xl p-6 border-2 border-slate-300 dark:border-slate-700 shadow-xs flex flex-col justify-center">
-          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+        <div class="lg:col-span-4 bg-white dark:bg-slate-800 rounded-xl p-6 border-2 border-slate-300 dark:border-slate-700 shadow-xs flex flex-col">
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
             {{ t('organizer.teamManagement.modes.label') }}
           </label>
           <v-select
@@ -529,11 +529,12 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
             item-value="value"
             item-title="title"
             variant="outlined"
-            density="comfortable"
+            density="compact"
             hide-details
+            class="mode-select flex-1"
           >
             <template #selection="{ item }">
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 w-full justify-center">
                 <v-icon :color="item.raw.color" size="20">{{ item.raw.icon }}</v-icon>
                 <span class="font-medium text-slate-800 dark:text-white">{{ item.raw.title }}</span>
               </div>
@@ -714,3 +715,31 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
     </v-dialog>
   </v-container>
 </template>
+
+<style scoped>
+.mode-select {
+  width: 100%;
+}
+
+.mode-select :deep(.v-input__control) {
+  height: 100%;
+}
+
+.mode-select :deep(.v-field) {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.mode-select :deep(.v-field__input) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.mode-select :deep(.v-field__append-inner) {
+  align-items: center;
+}
+</style>
