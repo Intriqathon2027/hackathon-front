@@ -311,11 +311,29 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
   }
 
   const fetchMatchmakingConfig = async () => {
-    const response = await configurationService.findOne(ConfigurationKey.MATCHMAKING)
-    if (response?.value) {
-      matchmakingConfig.value = response.value
-      if (response.value.algorithm) {
-        selectedAlgorithm.value = response.value.algorithm
+    try {
+      const response = await configurationService.findOne(ConfigurationKey.MATCHMAKING)
+      if (response?.value) {
+        matchmakingConfig.value = response.value
+        if (response.value.algorithm) {
+          selectedAlgorithm.value = response.value.algorithm
+        }
+        return
+      }
+    } catch (e) {
+      // Backend offline or error
+    }
+
+    if (import.meta.env.DEV) {
+      const local = localStorage.getItem(`config_${ConfigurationKey.MATCHMAKING}`)
+      if (local) {
+        try {
+          const val = JSON.parse(local)
+          matchmakingConfig.value = val
+          if (val.algorithm) {
+            selectedAlgorithm.value = val.algorithm
+          }
+        } catch (e) {}
       }
     }
   }

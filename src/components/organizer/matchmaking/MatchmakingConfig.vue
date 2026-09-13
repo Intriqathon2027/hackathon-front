@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { PropType } from 'vue'
 import {
@@ -112,6 +112,28 @@ watch(
   { immediate: true }
 )
 
+// Populate matchmaking settings from localStorage in DEV if present
+onMounted(() => {
+  if (import.meta.env.DEV) {
+    const local = localStorage.getItem(`config_${ConfigurationKey.MATCHMAKING}`)
+    if (local) {
+      try {
+        const val = JSON.parse(local)
+        matchmakingSettings.value = {
+          ...matchmakingSettings.value,
+          teamSizeMin: val.teamSizeMin ?? matchmakingSettings.value.teamSizeMin,
+          teamSizeMax: val.teamSizeMax ?? matchmakingSettings.value.teamSizeMax,
+          maxTeamsPerSubject: val.maxTeamsPerSubject ?? val.maxTeamsPerTopic ?? matchmakingSettings.value.maxTeamsPerSubject,
+          constraints: val.constraints ? [...val.constraints] : matchmakingSettings.value.constraints,
+          algorithm: val.algorithm ?? matchmakingSettings.value.algorithm,
+        }
+      } catch (e) {
+        console.error('Failed to parse local matchmaking settings:', e)
+      }
+    }
+  }
+})
+
 // Watch algorithmMode prop change to update internal state
 watch(
   () => props.algorithmMode,
@@ -199,7 +221,16 @@ const handleSave = async () => {
       })),
     }
 
-    await updateMatchmaking({ value: payload })
+    try {
+      await updateMatchmaking({ value: payload })
+    } catch (apiError) {
+      if (import.meta.env.DEV) {
+        localStorage.setItem(`config_${ConfigurationKey.MATCHMAKING}`, JSON.stringify(payload))
+        console.warn('Backend unavailable or not authenticated: configuration saved locally to localStorage in DEV mode.', payload)
+      } else {
+        throw apiError
+      }
+    }
 
     snackbarText.value = t('common.changesSaved')
     snackbarError.value = false
