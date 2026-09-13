@@ -21,6 +21,19 @@ export const useAuthStore = defineStore('auth', {
       const data = localStorage.getItem('authUser')
       if (data) {
         this.user = JSON.parse(data)
+      } else if (import.meta.env.DEV) {
+        const params = new URLSearchParams(window.location.search)
+        if (params.get('devAuth') === 'organizer') {
+          this.user = {
+            id: 'dev-org-id',
+            email: 'organizer@dev.local',
+            role: 'ORGANIZER' as any,
+            accessToken: 'dev-token',
+            firstname: 'Admin',
+            lastname: 'Organizer',
+          }
+          localStorage.setItem('authUser', JSON.stringify(this.user))
+        }
       }
     },
     updateAccessToken(newAccessToken: string) {

@@ -3,7 +3,7 @@
   import { useI18n } from 'vue-i18n'
   import { ConstraintDTO } from '@/types/config'
 
-  const { t } = useI18n()
+  const { t } = useI18n({ useScope: 'global' })
 
   // -----------------------------
   // Props & Emits
