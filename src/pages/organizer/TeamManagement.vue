@@ -21,6 +21,7 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
   import { TeamStatus } from '@/types/team_status'
   import { useTeamStore } from '@/stores/teamStore'
   import { githubService } from '@/services/githubService'
+  import type { AutogenerateUserBasedDTO } from '@/services/teamService'
 
   const { t, locale } = useI18n({ useScope: 'global' })
 
@@ -358,7 +359,21 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
     showAutogenerateResult.value = false
     teamsCreated.value = 0
     try {
-      const res = await teamStore.autogenerateTeams(selectedAlgorithm.value)
+      // Build DTO for the new User-Based algorithm from the current matchmaking configuration
+      let dto: AutogenerateUserBasedDTO | undefined
+      if (selectedAlgorithm.value === 'new' && matchmakingConfig.value) {
+        dto = {
+          teamSizeMin: Number(matchmakingConfig.value.teamSizeMin) || 1,
+          teamSizeMax: Number(matchmakingConfig.value.teamSizeMax) || 4,
+          maxTeamsPerSubject: Number(matchmakingConfig.value.maxTeamsPerSubject) || 2,
+          constraints: matchmakingConfig.value.constraints?.map((c) => ({
+            ...c,
+            value: Number(c.value),
+          })),
+        }
+      }
+
+      const res = await teamStore.autogenerateTeams(selectedAlgorithm.value, dto)
       teamsCreated.value = res
 
       text.value = t('organizer.teamManagement.teamAutogenerateSuccess', { count: res })

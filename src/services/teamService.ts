@@ -3,6 +3,28 @@ import { TeamDTO, TeamFormDTO } from '@/types/team'
 import { getAuthHeaders } from '@/stores/auth'
 import { TeamStatus } from '@/types/team_status'
 
+import { ConstraintDTO } from '@/types/config'
+
+export interface AutogenerateUserBasedDTO {
+  teamSizeMin?: number
+  teamSizeMax?: number
+  maxTeamsPerSubject?: number
+  ignoreConstraints?: boolean
+  constraints?: ConstraintDTO[]
+}
+
+export interface AutogenerateResponseDTO {
+  count: number
+  teams?: Array<{
+    id: string
+    name: string
+    subjectId?: string
+    themeId?: string
+    memberIds?: string[]
+  }>
+  unassignedUserIds?: string[]
+}
+
 const API_URL = `${import.meta.env.VITE_API_URL}/api/team`
 
 export const teamService = {
@@ -73,12 +95,42 @@ export const teamService = {
     return res.data
   },
 
-  async autogenerateTeams(algorithm?: string): Promise<number> {
-    const res = await axios.post(
-      `${API_URL}/autogenerate`,
-      algorithm ? { algorithm } : {},
+  /**
+   * New User-Based Matchmaking algorithm using Google OR-Tools CP-SAT
+   * Endpoint: POST /api/team/autogenerate/user-based
+   */
+  async autogenerateUserBasedTeams(dto?: AutogenerateUserBasedDTO): Promise<AutogenerateResponseDTO> {
+    const res = await axios.post<AutogenerateResponseDTO>(
+      `${API_URL}/autogenerate/user-based`,
+      dto || {},
       { headers: getAuthHeaders() }
     )
-    return res.data.count
-  }
+    return res.data
+  },
+
+  /**
+   * Legacy Matchmaking algorithm
+   * Endpoint: POST /api/team/autogenerate
+   */
+  async autogenerateLegacyTeams(): Promise<number> {
+    const res = await axios.post(
+      `${API_URL}/autogenerate`,
+      {},
+      { headers: getAuthHeaders() }
+    )
+    return res.data.count ?? res.data
+  },
+
+  /**
+   * Autogenerate teams based on selected algorithm:
+   * - 'new': calls /api/team/autogenerate/user-based with user-based matchmaking parameters
+   * - 'legacy' / other: calls /api/team/autogenerate
+   */
+  async autogenerateTeams(algorithm?: string, dto?: AutogenerateUserBasedDTO): Promise<number> {
+    if (algorithm === 'new') {
+      const res = await this.autogenerateUserBasedTeams(dto)
+      return res.count
+    }
+    return await this.autogenerateLegacyTeams()
+  },
 }
