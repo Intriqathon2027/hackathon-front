@@ -4,7 +4,7 @@
   import { configurationService } from '@/services/configurationService'
   import { HackathonMediaDTO } from '@/types/config'
   import { onMounted, ref } from 'vue'
-  import { ConfigurationKey } from '@/utils/configuration/configurationKey'
+  import { PublicConfigurationKey } from '@/utils/configuration/configurationKey'
 
   const { t } = useI18n()
 
@@ -21,7 +21,7 @@
 
   onMounted(async () => {
     try {
-      const response = await configurationService.findOne(ConfigurationKey.MEDIA)
+      const response = await configurationService.findOnePublic(PublicConfigurationKey.MEDIA)
       if (response && response.value) {
         mediaSettings.value = response.value
       }
