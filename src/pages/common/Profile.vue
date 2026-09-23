@@ -79,8 +79,10 @@ const onSaveClick = async () => {
         // Check if profile picture is being deleted (it exists currently but change is null)
         const isDeletingProfilePicture = userInfo.value?.profilePicturePath && profileChanges.profilePicturePath === null
 
-        const updatedUser: UserDTO = {
-            ...userInfo.value,
+        const { favoriteSubjectIds, createdAt, supabaseUserId, team, juryTeams, mentorTeams, ...safeUser } = (userInfo.value || {}) as any
+
+        const updatedUser = {
+            ...safeUser,
             ...profileChanges,
             ...personalInfoChanges,
             ...contactChanges
@@ -103,7 +105,7 @@ const onSaveClick = async () => {
         }
     } catch (err) {
         console.error('Error saving user:', err)
-        text.value = t('errors.loadUserFailed')
+        text.value = t('common.error')
         error.value = true
         snackbar.value = true
     }
