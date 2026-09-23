@@ -767,6 +767,7 @@ export default {
       themeNameRequired: 'Theme name is required',
       subjectRequired: 'At least one subject by theme is required',
       subjectNameRequired: 'Subject name is required',
+      atLeastOneTheme: 'At least one theme is required',
     },
     noName: 'No name provided',
     noDescription: 'No description provided',

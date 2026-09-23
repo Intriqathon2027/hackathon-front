@@ -50,7 +50,7 @@
               'font-weight-bold': phase.status === 'IN_PROGRESS',
             }"
           >
-            {{ phase.name }}
+            {{ phase.name || t(`hackathon.phases.${phase.order}.defaultName`) }}
 
             <v-chip
               v-if="phase.status === 'SKIPPED'"

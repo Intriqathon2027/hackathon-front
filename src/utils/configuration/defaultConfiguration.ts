@@ -3,12 +3,12 @@ import { ConfigurationKey } from './configurationKey'
 
 function getDefaultPhases() {
   const phaseNames = [
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
+    'Complétion de Profil',
+    'Sélection du Sujet',
+    'Formation des Équipes',
+    'Hackathon',
+    'Évaluation & Feedback',
+    'Clôture & Annonces',
   ];
 
   const phases = phaseNames.map((name, index) => {
@@ -207,6 +207,8 @@ export const defaultConfigurations = {
     teamSizeMin: 1,
     teamSizeMax: 1,
     maxTeamsPerSubject: 2,
+    maxTeamsPerTopic: 2,
+    algorithm: 'new',
     constraints: [],
   },
   [ConfigurationKey.THEMES]: [],

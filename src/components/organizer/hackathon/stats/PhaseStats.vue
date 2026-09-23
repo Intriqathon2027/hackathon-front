@@ -50,7 +50,7 @@
 
   const getPhaseName = (order: number): string => {
     const phase = props.phases.find((phase) => phase.order === order)
-    return phase ? phase.name : ''
+    return phase?.name || t(`hackathon.phases.${order}.defaultName`)
   }
 </script>
 

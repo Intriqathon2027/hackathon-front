@@ -253,7 +253,6 @@ const downloadSubmissionFile = async () => {
         class="mt-4"
         closable
       >
-        <v-icon>mdi-check-circle</v-icon>
         {{ t(`${tPrefix}.submission.upload.uploadSuccess`) }}
       </v-alert>
 

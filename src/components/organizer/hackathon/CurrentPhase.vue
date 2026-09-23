@@ -29,7 +29,7 @@
             {{ t('hackathonManagement.currentPhase') }}
           </div>
           <div class="text-h4 font-weight-bold">
-            {{ currentPhase.name }}
+            {{ currentPhase.name || t(`hackathon.phases.${currentPhase.order}.defaultName`) }}
           </div>
         </div>
       </v-col>

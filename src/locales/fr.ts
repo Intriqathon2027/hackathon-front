@@ -801,7 +801,7 @@ export default {
       themeNameRequired: 'Le nom du thème est requis',
       subjectRequired: 'Un sujet minimum par thème est requis',
       subjectNameRequired: 'Le nom du sujet est requis',
-
+      atLeastOneTheme: 'Au moins un thème est requis',
     },
     noName: 'Nom non renseigné',
     noDescription: 'Description non renseignée',
