@@ -75,6 +75,32 @@ export const useTeamStore = defineStore('team', {
     },
 
     /**
+     * Delete selected teams by their IDs and removes them from the state.
+     */
+    async deleteTeams(teamIds: string[]): Promise<void> {
+      if (!teamIds || teamIds.length === 0) return
+      this.loading = true
+      try {
+        await teamService.deleteAll(teamIds)
+        const idSet = new Set(teamIds)
+        this.teams = this.teams.filter((t: TeamDTO) => !idSet.has(t.id))
+      } catch (error) {
+        console.error('Error deleting teams:', error)
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    /**
+     * Delete all teams from the backend and clears them from state.
+     */
+    async deleteAllTeams(): Promise<void> {
+      const teamIds = this.teams.map((t: TeamDTO) => t.id)
+      await this.deleteTeams(teamIds)
+    },
+
+    /**
      * Assign a user to a team.
      */
     async assignUserToTeam(teamId: string, userId: string, isParticipant = false): Promise<void> {

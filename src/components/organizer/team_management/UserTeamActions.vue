@@ -13,7 +13,7 @@
 
   const emit = defineEmits(['assign', 'withdraw'])
 
-  const hasTeam = computed(() => !!props.user.teamId)
+  const hasTeam = computed(() => !!props.user.teamId || !!props.user.team)
 
   const showAssign = computed(() => {
     switch (props.user.role) {

@@ -162,6 +162,43 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
     }
   }
 
+  const isDeletingAllTeams = ref(false)
+  const showDeleteAllConfirmModal = ref(false)
+
+  const confirmDeleteAllTeams = () => {
+    showDeleteAllConfirmModal.value = true
+  }
+
+  const handleDeleteAllTeams = async () => {
+    showDeleteAllConfirmModal.value = false
+    isDeletingAllTeams.value = true
+    try {
+      await teamStore.deleteAllTeams()
+      selectedTeamIds.value = []
+      text.value = t('organizer.teamManagement.allTeamsDeleted')
+      error.value = false
+      snackbar.value = true
+      try {
+        await fetchUsers()
+      } catch (e) {
+        console.warn('Could not refresh users:', e)
+      }
+    } catch (err) {
+      console.error('Error deleting all teams:', err)
+      text.value = t('organizer.teamManagement.allTeamsDeleteError')
+      error.value = true
+      snackbar.value = true
+      try {
+        await teamStore.fetchTeams()
+        await fetchUsers()
+      } catch (e) {
+        console.warn('Could not refresh teams after delete error:', e)
+      }
+    } finally {
+      isDeletingAllTeams.value = false
+    }
+  }
+
   const assignToTeam = async (payload: { userId: string; teamId: string }) => {
     const { userId, teamId } = payload
     try {
@@ -461,6 +498,71 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
     } catch (e) {
       console.warn('Error fetching teams:', e)
     }
+
+    if (import.meta.env.DEV && teamStore.teams.length === 0) {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('mockTeams') === 'true') {
+        teamStore.teams = [
+          {
+            id: 'mock-1',
+            name: 'CyberGuardians',
+            subjectId: 'subj-1',
+            themeId: 'theme-1',
+            status: TeamStatus.UNLOCKED,
+            ignoreConstraints: false,
+            members: [
+              { id: 'u1', firstname: 'Alice', lastname: 'Dupont', email: 'alice@example.com', role: UserRole.PARTICIPANT, school: 'EPITA' },
+              { id: 'u2', firstname: 'Bob', lastname: 'Martin', email: 'bob@example.com', role: UserRole.PARTICIPANT, school: 'EPITA' },
+            ],
+            mentors: [],
+            juries: [],
+          },
+          {
+            id: 'mock-2',
+            name: 'QuantumLeap',
+            subjectId: 'subj-2',
+            themeId: 'theme-1',
+            status: TeamStatus.UNLOCKED,
+            ignoreConstraints: false,
+            members: [
+              { id: 'u3', firstname: 'Charlie', lastname: 'Durand', email: 'charlie@example.com', role: UserRole.PARTICIPANT, school: 'Epitech' },
+            ],
+            mentors: [],
+            juries: [],
+          },
+          {
+            id: 'mock-3',
+            name: 'CodeCrafters',
+            subjectId: 'subj-3',
+            themeId: 'theme-2',
+            status: TeamStatus.LOCKED,
+            ignoreConstraints: true,
+            members: [
+              { id: 'u4', firstname: 'Diane', lastname: 'Leroy', email: 'diane@example.com', role: UserRole.PARTICIPANT, school: 'ISG' },
+            ],
+            mentors: [],
+            juries: [],
+          },
+        ]
+        themes.value = [
+          {
+            id: 'theme-1',
+            name: 'Intelligence Artificielle',
+            subjects: [
+              { id: 'subj-1', name: 'Détection d’anomalies' },
+              { id: 'subj-2', name: 'Optimisation de réseau' },
+            ],
+          },
+          {
+            id: 'theme-2',
+            name: 'Cybersécurité',
+            subjects: [
+              { id: 'subj-3', name: 'Zero Trust Architecture' },
+            ],
+          },
+        ]
+      }
+    }
   })
 
   // FILTERED TEAMS OR USERS
@@ -483,9 +585,119 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
       selectedUserTeamStatus.value,
       filterName.value,
       selectedRole.value,
-      selectedSchool.value
+      selectedSchool.value,
+      teams.value
     )
   )
+
+  // ----- SELECTION & BULK DELETE -----
+  const selectedTeamIds = ref<string[]>([])
+  const isDeletingSelectedTeams = ref(false)
+  const showDeleteSelectedConfirmModal = ref(false)
+
+  // Single team delete from table
+  const teamToDelete = ref<TeamDTO | null>(null)
+  const showDeleteSingleConfirmModal = ref(false)
+
+  // Keep selectedTeamIds synchronized when teams list changes
+  watch(
+    teams,
+    (newTeams) => {
+      const existingIds = new Set(newTeams.map((t) => t.id))
+      selectedTeamIds.value = selectedTeamIds.value.filter((id) => existingIds.has(id))
+    },
+    { deep: true }
+  )
+
+  const isAllFilteredSelected = computed(() => {
+    return (
+      filteredTeams.value.length > 0 &&
+      filteredTeams.value.every((t) => selectedTeamIds.value.includes(t.id))
+    )
+  })
+
+  const toggleSelectAllFiltered = () => {
+    if (isAllFilteredSelected.value) {
+      const filteredIdSet = new Set(filteredTeams.value.map((t) => t.id))
+      selectedTeamIds.value = selectedTeamIds.value.filter((id) => !filteredIdSet.has(id))
+    } else {
+      const merged = new Set([...selectedTeamIds.value, ...filteredTeams.value.map((t) => t.id)])
+      selectedTeamIds.value = Array.from(merged)
+    }
+  }
+
+  const clearSelectedTeams = () => {
+    selectedTeamIds.value = []
+  }
+
+  const confirmDeleteSelectedTeams = () => {
+    if (selectedTeamIds.value.length === 0) return
+    showDeleteSelectedConfirmModal.value = true
+  }
+
+  const handleDeleteSelectedTeams = async () => {
+    showDeleteSelectedConfirmModal.value = false
+    const count = selectedTeamIds.value.length
+    isDeletingSelectedTeams.value = true
+    try {
+      await teamStore.deleteTeams(selectedTeamIds.value)
+      selectedTeamIds.value = []
+      text.value = t('organizer.teamManagement.selectedTeamsDeleted', { count })
+      error.value = false
+      snackbar.value = true
+      try {
+        await fetchUsers()
+      } catch (e) {
+        console.warn('Could not refresh users:', e)
+      }
+    } catch (err) {
+      console.error('Error deleting selected teams:', err)
+      text.value = t('organizer.teamManagement.selectedTeamsDeleteError')
+      error.value = true
+      snackbar.value = true
+      try {
+        await teamStore.fetchTeams()
+        await fetchUsers()
+      } catch (e) {
+        console.warn('Could not refresh teams after delete error:', e)
+      }
+    } finally {
+      isDeletingSelectedTeams.value = false
+    }
+  }
+
+  const confirmDeleteSingleTeam = (teamId: string) => {
+    const team = teams.value.find((t) => t.id === teamId)
+    if (team) {
+      teamToDelete.value = team
+      showDeleteSingleConfirmModal.value = true
+    }
+  }
+
+  const handleDeleteSingleTeam = async () => {
+    showDeleteSingleConfirmModal.value = false
+    if (!teamToDelete.value) return
+    const id = teamToDelete.value.id
+    try {
+      await teamStore.deleteTeam(id)
+      selectedTeamIds.value = selectedTeamIds.value.filter((tid) => tid !== id)
+      text.value = t('organizer.teamManagement.teamDeleted')
+      error.value = false
+      snackbar.value = true
+      try {
+        await fetchUsers()
+      } catch (e) {
+        console.warn('Could not refresh users:', e)
+      }
+    } catch (err) {
+      console.error('Error deleting team:', err)
+      text.value = t('organizer.teamManagement.teamDeleteError')
+      error.value = true
+      snackbar.value = true
+    } finally {
+      teamToDelete.value = null
+    }
+  }
 </script>
 
 <template>
@@ -562,8 +774,8 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
         />
       </div>
 
-      <!-- 4. In-line Action Buttons: Create repos & Create Team(s) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+      <!-- 4. In-line Action Buttons: Create repos, Create Team(s) & Delete teams -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <!-- Button 1: Create repos -->
         <v-btn
           color="black"
@@ -571,7 +783,7 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
           class="h-12 text-base font-semibold"
           @click="confirmInitializeRepos"
           :loading="isInitializingRepos"
-          :disabled="loadingTeams"
+          :disabled="loadingTeams || isDeletingAllTeams || isDeletingSelectedTeams"
         >
           <v-icon start size="22">mdi-github</v-icon>
           {{ t('organizer.teamManagement.actions.createRepos') }}
@@ -585,7 +797,7 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
             class="h-12 text-base font-semibold flex-1"
             @click="handleCreateTeams"
             :loading="autogenerating"
-            :disabled="loadingTeams"
+            :disabled="loadingTeams || isDeletingAllTeams || isDeletingSelectedTeams"
           >
             <v-icon start size="22">{{ selectedAlgorithm === 'manual' ? 'mdi-account-plus' : 'mdi-auto-fix' }}</v-icon>
             {{ selectedAlgorithm === 'manual' ? t('organizer.teamManagement.actions.add') : t('organizer.teamManagement.actions.createTeams') }}
@@ -600,10 +812,25 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
             class="h-12 px-3"
             @click="onAddTeam"
             :title="t('organizer.teamManagement.actions.createTeamManual')"
+            :disabled="loadingTeams || isDeletingAllTeams || isDeletingSelectedTeams"
           >
             <v-icon>mdi-plus</v-icon>
           </v-btn>
         </div>
+
+        <!-- Button 3: Delete all teams -->
+        <v-btn
+          color="error"
+          variant="outlined"
+          size="large"
+          class="h-12 text-base font-semibold border-2 w-full"
+          @click="confirmDeleteAllTeams"
+          :loading="isDeletingAllTeams"
+          :disabled="loadingTeams || isDeletingAllTeams || isDeletingSelectedTeams || teams.length === 0"
+        >
+          <v-icon start size="22">mdi-delete-sweep-outline</v-icon>
+          {{ t('organizer.teamManagement.actions.deleteAllTeams') }}
+        </v-btn>
       </div>
 
       <!-- 5. Teams (liste) -->
@@ -620,12 +847,78 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
         />
 
         <div class="mt-6">
+          <!-- Selection & Bulk Action Toolbar -->
+          <div
+            v-if="viewMode === 'team' && !loadingTeams && filteredTeams.length > 0"
+            class="flex flex-wrap items-center justify-between gap-3 mb-4 p-3 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl"
+          >
+            <!-- Left: Select All & count -->
+            <div class="flex items-center gap-3">
+              <v-btn
+                size="small"
+                variant="tonal"
+                color="primary"
+                class="font-medium"
+                :prepend-icon="isAllFilteredSelected ? 'mdi-checkbox-blank-outline' : 'mdi-checkbox-multiple-marked-outline'"
+                @click="toggleSelectAllFiltered"
+              >
+                {{ isAllFilteredSelected ? t('organizer.teamManagement.actions.deselectAll') : t('organizer.teamManagement.actions.selectAll') }}
+              </v-btn>
+
+              <span
+                v-if="selectedTeamIds.length > 0"
+                class="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1.5"
+              >
+                <v-badge
+                  :content="selectedTeamIds.length"
+                  color="primary"
+                  inline
+                />
+                {{ t('organizer.teamManagement.selectedTeamsCount', { count: selectedTeamIds.length }) }}
+              </span>
+              <span
+                v-else
+                class="text-xs text-slate-500 dark:text-slate-400"
+              >
+                {{ t('organizer.teamManagement.noSelectionHint') }}
+              </span>
+            </div>
+
+            <!-- Right: Delete selected button -->
+            <div class="flex items-center gap-2">
+              <v-btn
+                v-if="selectedTeamIds.length > 0"
+                size="small"
+                variant="text"
+                class="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                @click="clearSelectedTeams"
+              >
+                {{ t('organizer.teamManagement.actions.deselectAll') }}
+              </v-btn>
+
+              <v-btn
+                color="error"
+                variant="flat"
+                size="small"
+                class="font-semibold shadow-xs"
+                prepend-icon="mdi-delete-outline"
+                :disabled="selectedTeamIds.length === 0 || isDeletingSelectedTeams || isDeletingAllTeams"
+                :loading="isDeletingSelectedTeams"
+                @click="confirmDeleteSelectedTeams"
+              >
+                {{ t('organizer.teamManagement.actions.deleteSelectedTeams', { count: selectedTeamIds.length }) }}
+              </v-btn>
+            </div>
+          </div>
+
           <TeamTable
             v-if="viewMode === 'team' && !loadingTeams && filteredTeams.length > 0"
             :teams="filteredTeams"
             :themes="themes"
             :constraints-map="teamConstraintsMap"
+            v-model:selected-team-ids="selectedTeamIds"
             @edit="onEditTeam"
+            @delete="confirmDeleteSingleTeam"
             @toggle-constraints="toggleConstraints"
             @toggle-lock="updateLockStatus"
           />
@@ -662,6 +955,35 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
         :confirm-label="t('organizer.teamManagement.confirmRepoDialog.confirm')"
         :cancel-label="t('common.cancel')"
         @confirm="handleConfirmRepos"
+      />
+
+      <ConfirmDialog
+        v-model="showDeleteAllConfirmModal"
+        :title="t('organizer.teamManagement.dialog.deleteAllConfirmTitle')"
+        :text="t('organizer.teamManagement.dialog.deleteAllConfirmText', { count: teams.length })"
+        :secondary-text="t('organizer.teamManagement.dialog.deleteAllConfirmWarning')"
+        :confirm-label="t('common.delete')"
+        :cancel-label="t('common.cancel')"
+        @confirm="handleDeleteAllTeams"
+      />
+
+      <ConfirmDialog
+        v-model="showDeleteSelectedConfirmModal"
+        :title="t('organizer.teamManagement.dialog.deleteSelectedConfirmTitle')"
+        :text="t('organizer.teamManagement.dialog.deleteSelectedConfirmText', { count: selectedTeamIds.length })"
+        :secondary-text="t('organizer.teamManagement.dialog.deleteSelectedConfirmWarning')"
+        :confirm-label="t('common.delete')"
+        :cancel-label="t('common.cancel')"
+        @confirm="handleDeleteSelectedTeams"
+      />
+
+      <ConfirmDialog
+        v-model="showDeleteSingleConfirmModal"
+        :title="t('organizer.teamManagement.dialog.deleteConfirmTitle')"
+        :text="t('organizer.teamManagement.dialog.deleteConfirmText', { teamName: teamToDelete?.name || '' })"
+        :confirm-label="t('common.delete')"
+        :cancel-label="t('common.cancel')"
+        @confirm="handleDeleteSingleTeam"
       />
 
       <TeamForm
