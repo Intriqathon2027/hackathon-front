@@ -735,17 +735,17 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
     <div class="px-2 sm:px-4">
       <!-- 1. Main Title -->
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-black tracking-tight">
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
           {{ t('organizer.teamManagement.title') }}
         </h1>
       </div>
 
       <!-- 2. Creation Type Choice Box & Description -->
-      <div class="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm mb-8">
+      <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm mb-8">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
           <!-- Left: Choice Box Selector -->
           <div class="lg:col-span-5">
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
               {{ t('organizer.teamManagement.modes.label') }}
             </label>
             <v-select
@@ -762,7 +762,7 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
               <template #selection="{ item }">
                 <div class="flex items-center gap-2.5">
                   <v-icon color="primary" size="20">{{ item.raw.icon }}</v-icon>
-                  <span class="font-semibold text-slate-800 dark:text-black">{{ item.raw.title }}</span>
+                  <span class="font-semibold text-slate-900">{{ item.raw.title }}</span>
                 </div>
               </template>
               <template #item="{ item, props: itemProps }">
@@ -770,7 +770,7 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
                   <template #prepend>
                     <v-icon color="primary" size="20" class="mr-3">{{ item.raw.icon }}</v-icon>
                   </template>
-                  <v-list-item-title class="font-semibold text-sm">
+                  <v-list-item-title class="font-semibold text-sm text-slate-900">
                     {{ item.raw.title }}
                   </v-list-item-title>
                 </v-list-item>
@@ -779,17 +779,17 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
           </div>
 
           <!-- Right: Active Mode Summary & Description -->
-          <div class="lg:col-span-7 lg:border-l lg:border-slate-200 dark:lg:border-slate-700 lg:pl-6">
+          <div class="lg:col-span-7 lg:border-l lg:border-slate-200 lg:pl-6">
             <div class="flex items-center gap-2 mb-1.5">
-              <span class="text-xs uppercase tracking-wider font-semibold text-slate-400 dark:text-slate-500">
+              <span class="text-xs uppercase tracking-wider font-semibold text-slate-500">
                 {{ t('organizer.teamManagement.activeAlgorithm') }} :
               </span>
-              <span class="text-sm font-bold text-slate-800 dark:text-black flex items-center gap-1.5">
+              <span class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                 <v-icon color="primary" size="18">{{ currentAlgorithm.icon }}</v-icon>
                 {{ currentAlgorithm.title }}
               </span>
             </div>
-            <p class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-0">
+            <p class="text-slate-600 text-sm leading-relaxed mb-0">
               {{ currentAlgorithm.description }}
             </p>
           </div>
@@ -808,17 +808,17 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
 
       <!-- Manual Mode: Informative Banner & Expandable Criteria / Constraints Panel -->
       <div v-else-if="selectedAlgorithm === 'manual'" class="mb-8 space-y-4">
-        <div class="p-4 rounded-xl bg-blue-50/70 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-100 flex items-start gap-3">
+        <div class="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-950 flex items-start gap-3">
           <v-icon color="primary" class="mt-0.5">mdi-information-outline</v-icon>
-          <div class="text-sm">
+          <div class="text-sm text-blue-950">
             <span class="font-semibold">{{ t('organizer.teamManagement.modes.manual.title') }} : </span>
             {{ t('organizer.teamManagement.modes.manual.configNotice') }}
           </div>
         </div>
 
-        <v-expansion-panels class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
+        <v-expansion-panels class="rounded-xl overflow-hidden border border-slate-200">
           <v-expansion-panel elevation="0">
-            <v-expansion-panel-title class="text-sm font-semibold text-slate-700 dark:text-slate-200 py-3">
+            <v-expansion-panel-title class="text-sm font-semibold text-slate-800 py-3">
               <div class="flex items-center gap-2">
                 <v-icon size="20" color="primary">mdi-tune-vertical</v-icon>
                 <span>{{ t('organizer.teamManagement.configSectionTitle') }}</span>
@@ -897,7 +897,7 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
       </div>
 
       <!-- 5. Teams (liste) -->
-      <div class="border-t border-slate-200 dark:border-slate-800 pt-6">
+      <div class="border-t border-slate-200 pt-6">
         <TeamFilters
           v-model:view-mode="viewMode"
           v-model:selectedTeamStatus="selectedTeamStatus"
@@ -913,7 +913,7 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
           <!-- Selection & Bulk Action Toolbar -->
           <div
             v-if="viewMode === 'team' && !loadingTeams && filteredTeams.length > 0"
-            class="flex flex-wrap items-center justify-between gap-3 mb-4 p-3 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl"
+            class="flex flex-wrap items-center justify-between gap-3 mb-4 p-3 bg-slate-50 border border-slate-200 rounded-xl"
           >
             <!-- Left: Select All & count -->
             <div class="flex items-center gap-3">
@@ -930,7 +930,7 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
 
               <span
                 v-if="selectedTeamIds.length > 0"
-                class="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1.5"
+                class="text-sm font-semibold text-slate-800 flex items-center gap-1.5"
               >
                 <v-badge
                   :content="selectedTeamIds.length"
@@ -941,7 +941,7 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
               </span>
               <span
                 v-else
-                class="text-xs text-slate-500 dark:text-slate-400"
+                class="text-xs text-slate-600"
               >
                 {{ t('organizer.teamManagement.noSelectionHint') }}
               </span>
@@ -953,7 +953,7 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
                 v-if="selectedTeamIds.length > 0"
                 size="small"
                 variant="text"
-                class="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                class="text-slate-600 hover:text-slate-900"
                 @click="clearSelectedTeams"
               >
                 {{ t('organizer.teamManagement.actions.deselectAll') }}

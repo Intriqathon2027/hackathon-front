@@ -144,7 +144,7 @@
         <v-form @submit.prevent="save" class="space-y-4">
           <!-- Rule -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <label class="block text-sm font-semibold text-slate-800 mb-1">
               {{ t('matchmakingSettings.rule') }}
             </label>
             <v-select
@@ -160,7 +160,7 @@
 
           <!-- Value -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <label class="block text-sm font-semibold text-slate-800 mb-1">
               {{ t('matchmakingSettings.numberOfPeople') }}
             </label>
             <v-text-field
@@ -186,7 +186,7 @@
 
           <!-- Schools -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <label class="block text-sm font-semibold text-slate-800 mb-1">
               {{ t('matchmakingSettings.schools') }}
             </label>
             <v-select

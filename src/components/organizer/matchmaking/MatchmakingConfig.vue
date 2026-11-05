@@ -327,20 +327,20 @@ const updateConstraint = (index: number | undefined, updatedCriterion: Constrain
   <div
     class="rounded-xl transition-all relative"
     :class="[
-      bordered ? 'border border-slate-200 dark:border-slate-700 p-6 shadow-sm' : 'p-2',
-      'bg-white dark:bg-slate-800'
+      bordered ? 'border border-slate-200 p-6 shadow-sm' : 'p-2',
+      'bg-white'
     ]"
   >
     <!-- Card Header with Title and Save Button -->
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-700 mb-6">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 mb-6">
       <div>
         <div class="flex items-center gap-3">
-          <h2 v-if="!hideTitle" class="text-xl font-bold text-slate-900 dark:text-black flex items-center gap-2">
+          <h2 v-if="!hideTitle" class="text-xl font-bold text-slate-900 flex items-center gap-2">
             <v-icon color="primary" size="24">mdi-tune-vertical</v-icon>
             {{ title || t('organizer.teamManagement.configSectionTitle') }}
           </h2>
         </div>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        <p class="text-sm text-slate-600 mt-1">
           {{ t('matchmakingSettings.subtitle') }}
         </p>
       </div>
@@ -373,22 +373,22 @@ const updateConstraint = (index: number | undefined, updatedCriterion: Constrain
     <!-- Mode Context Alert Banner -->
     <div
       v-if="algorithmMode === 'new'"
-      class="mb-6 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-100 flex items-start gap-3"
+      class="mb-6 p-4 rounded-lg bg-blue-50 border border-blue-200 text-blue-950 flex items-start gap-3"
     >
       <v-icon color="primary" class="mt-0.5">mdi-auto-fix</v-icon>
-      <div class="text-sm">
-        <span class="font-semibold">{{ t('organizer.teamManagement.modes.new.title') }} : </span>
+      <div class="text-sm text-blue-950">
+        <span class="font-semibold text-blue-950">{{ t('organizer.teamManagement.modes.new.title') }} : </span>
         {{ t('organizer.teamManagement.modes.new.configNotice') }}
       </div>
     </div>
 
     <div
       v-else-if="algorithmMode === 'manual'"
-      class="mb-6 p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-100 flex items-start gap-3"
+      class="mb-6 p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-950 flex items-start gap-3"
     >
       <v-icon color="amber-darken-3" class="mt-0.5">mdi-information-outline</v-icon>
-      <div class="text-sm">
-        <span class="font-semibold">{{ t('organizer.teamManagement.modes.manual.title') }} : </span>
+      <div class="text-sm text-amber-950">
+        <span class="font-semibold text-amber-950">{{ t('organizer.teamManagement.modes.manual.title') }} : </span>
         {{ t('organizer.teamManagement.modes.manual.configNotice') }}
       </div>
     </div>
@@ -397,7 +397,7 @@ const updateConstraint = (index: number | undefined, updatedCriterion: Constrain
     <div class="space-y-6">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+          <label class="block text-sm font-semibold text-slate-800 mb-1">
             {{ t('matchmakingSettings.minTeamSize') }} *
           </label>
           <v-text-field
@@ -412,7 +412,7 @@ const updateConstraint = (index: number | undefined, updatedCriterion: Constrain
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+          <label class="block text-sm font-semibold text-slate-800 mb-1">
             {{ t('matchmakingSettings.maxTeamSize') }} *
           </label>
           <v-text-field
@@ -427,7 +427,7 @@ const updateConstraint = (index: number | undefined, updatedCriterion: Constrain
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+          <label class="block text-sm font-semibold text-slate-800 mb-1">
             {{ t('matchmakingSettings.maxTeamsPerSubject') }} *
           </label>
           <v-text-field
@@ -443,14 +443,14 @@ const updateConstraint = (index: number | undefined, updatedCriterion: Constrain
       </div>
 
       <!-- Constraints Section -->
-      <div class="pt-6 border-t border-slate-200 dark:border-slate-700">
+      <div class="pt-6 border-t border-slate-200">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
-            <h3 class="text-lg font-bold text-slate-800 dark:text-black flex items-center gap-2">
+            <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
               <v-icon size="20" color="primary">mdi-shield-check-outline</v-icon>
               {{ t('matchmakingSettings.constraint') }}
             </h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400">
+            <p class="text-xs text-slate-600">
               {{ t('matchmakingSettings.schoolQuotaSubtitle') }}
             </p>
           </div>
@@ -466,7 +466,7 @@ const updateConstraint = (index: number | undefined, updatedCriterion: Constrain
           </v-btn>
         </div>
 
-        <div v-if="!hasConstraints" class="p-6 text-center bg-slate-50 dark:bg-slate-700/50 rounded-lg text-slate-500 dark:text-slate-400 text-sm">
+        <div v-if="!hasConstraints" class="p-6 text-center bg-slate-50 rounded-lg text-slate-600 text-sm">
           <v-icon size="36" class="mb-2 text-slate-400">mdi-clipboard-text-off-outline</v-icon>
           <p>{{ t('matchmakingSettings.noConstraints') }}</p>
         </div>
