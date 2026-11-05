@@ -735,7 +735,7 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
     <div class="px-2 sm:px-4">
       <!-- 1. Main Title -->
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-black tracking-tight">
           {{ t('organizer.teamManagement.title') }}
         </h1>
       </div>
@@ -762,7 +762,7 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
               <template #selection="{ item }">
                 <div class="flex items-center gap-2.5">
                   <v-icon color="primary" size="20">{{ item.raw.icon }}</v-icon>
-                  <span class="font-semibold text-slate-800 dark:text-white">{{ item.raw.title }}</span>
+                  <span class="font-semibold text-slate-800 dark:text-black">{{ item.raw.title }}</span>
                 </div>
               </template>
               <template #item="{ item, props: itemProps }">
@@ -784,7 +784,7 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
               <span class="text-xs uppercase tracking-wider font-semibold text-slate-400 dark:text-slate-500">
                 {{ t('organizer.teamManagement.activeAlgorithm') }} :
               </span>
-              <span class="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+              <span class="text-sm font-bold text-slate-800 dark:text-black flex items-center gap-1.5">
                 <v-icon color="primary" size="18">{{ currentAlgorithm.icon }}</v-icon>
                 {{ currentAlgorithm.title }}
               </span>

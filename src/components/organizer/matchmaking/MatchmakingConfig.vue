@@ -335,7 +335,7 @@ const updateConstraint = (index: number | undefined, updatedCriterion: Constrain
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-700 mb-6">
       <div>
         <div class="flex items-center gap-3">
-          <h2 v-if="!hideTitle" class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <h2 v-if="!hideTitle" class="text-xl font-bold text-slate-900 dark:text-black flex items-center gap-2">
             <v-icon color="primary" size="24">mdi-tune-vertical</v-icon>
             {{ title || t('organizer.teamManagement.configSectionTitle') }}
           </h2>
@@ -446,7 +446,7 @@ const updateConstraint = (index: number | undefined, updatedCriterion: Constrain
       <div class="pt-6 border-t border-slate-200 dark:border-slate-700">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
-            <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+            <h3 class="text-lg font-bold text-slate-800 dark:text-black flex items-center gap-2">
               <v-icon size="20" color="primary">mdi-shield-check-outline</v-icon>
               {{ t('matchmakingSettings.constraint') }}
             </h3>
