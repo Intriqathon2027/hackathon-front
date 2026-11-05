@@ -40,6 +40,12 @@
 
   const error = ref<string | null>(null)
 
+  const ruleOptions = computed(() => [
+    { title: t('common.minimum'), value: 'MIN' },
+    { title: t('common.maximum'), value: 'MAX' },
+    { title: t('common.equal'), value: 'EQUAL' },
+  ])
+
   // -----------------------------
   // Reset & initialize form
   // -----------------------------
@@ -121,72 +127,100 @@
 </script>
 
 <template>
-  <v-dialog v-model="localModelValue" max-width="800">
-    <v-card>
-      <v-card-title class="text-lg font-bold px-6 pt-6">
-        {{
-          props.editMode
-            ? t('matchmakingSettings.editConstraint')
-            : t('matchmakingSettings.addConstraint')
-        }}
-        <v-btn icon class="absolute top-2 right-2" @click="close" aria-label="Close">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
+  <v-dialog v-model="localModelValue" max-width="600">
+    <v-card class="rounded-xl">
+      <v-card-title class="text-lg font-bold px-6 pt-6 flex justify-between items-center">
+        <span>
+          {{
+            props.editMode
+              ? t('matchmakingSettings.editConstraint')
+              : t('matchmakingSettings.addConstraint')
+          }}
+        </span>
+        <v-btn icon="mdi-close" variant="text" density="compact" @click="close" aria-label="Close" />
       </v-card-title>
 
-      <v-card-text>
+      <v-card-text class="px-6 py-4">
         <v-form @submit.prevent="save" class="space-y-4">
           <!-- Rule -->
-          <p>{{ t('matchmakingSettings.rule') }}</p>
-          <v-select
-            v-model="constraint.rule"
-            :items="['MIN', 'MAX', 'EQUAL']"
-            :placeholder="t('matchmakingSettings.rule')"
-            outlined
-          />
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              {{ t('matchmakingSettings.rule') }}
+            </label>
+            <v-select
+              v-model="constraint.rule"
+              :items="ruleOptions"
+              item-title="title"
+              item-value="value"
+              variant="outlined"
+              density="comfortable"
+              hide-details
+            />
+          </div>
 
           <!-- Value -->
-          <p>{{ t('matchmakingSettings.numberOfPeople') }}</p>
-          <v-text-field
-            v-model="constraint.value"
-            :placeholder="t('matchmakingSettings.numberOfPeople')"
-            type="number"
-            min="1"
-            :max="props.maxTeamSize"
-            outlined
-          />
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              {{ t('matchmakingSettings.numberOfPeople') }}
+            </label>
+            <v-text-field
+              v-model.number="constraint.value"
+              type="number"
+              min="1"
+              :max="props.maxTeamSize"
+              variant="outlined"
+              density="comfortable"
+              hide-details
+            />
+          </div>
 
           <!-- Solo / Multiple -->
           <v-switch
             v-model="constraint.multiple"
             :label="constraint.multiple ? t('common.multiple') : t('common.individual')"
             :hint="t('matchmakingSettings.multipleHint')"
-            color="green"
+            persistent-hint
+            color="primary"
+            hide-details="auto"
           />
 
           <!-- Schools -->
-          <p>{{ t('matchmakingSettings.schools') }}</p>
-          <v-select
-            v-model="schoolsProxy as unknown as string[]"
-            v-if="constraint.multiple"
-            :items="props.schoolNames"
-            :placeholder="t('matchmakingSettings.selectSchools')"
-            multiple
-            outlined
-          />
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              {{ t('matchmakingSettings.schools') }}
+            </label>
+            <v-select
+              v-if="constraint.multiple"
+              v-model="schoolsProxy as unknown as string[]"
+              :items="props.schoolNames"
+              :placeholder="t('matchmakingSettings.selectSchools')"
+              multiple
+              chips
+              closable-chips
+              variant="outlined"
+              density="comfortable"
+              hide-details
+            />
+            <v-select
+              v-else
+              v-model="schoolsProxy as unknown as string"
+              :items="props.schoolNames"
+              :placeholder="t('matchmakingSettings.selectSchools')"
+              variant="outlined"
+              density="comfortable"
+              hide-details
+            />
+          </div>
 
-          <v-select
-            v-else
-            v-model="schoolsProxy as unknown as string"
-            :items="props.schoolNames"
-            :placeholder="t('matchmakingSettings.selectSchools')"
-            outlined
-          />
+          <v-alert v-if="error" type="error" variant="tonal" density="compact" class="mt-2">
+            {{ error }}
+          </v-alert>
 
-          <p v-if="error" class="text-red-600">{{ error }}</p>
-
-          <v-card-actions class="justify-center">
-            <v-btn color="primary" type="submit" variant="elevated" class="px-8">
+          <v-card-actions class="justify-end gap-2 pt-4 px-0">
+            <v-btn variant="text" @click="close">
+              {{ t('common.cancel') }}
+            </v-btn>
+            <v-btn color="primary" type="submit" variant="elevated" class="px-6 font-semibold">
               {{ props.editMode ? t('common.edit') : t('common.create') }}
             </v-btn>
           </v-card-actions>

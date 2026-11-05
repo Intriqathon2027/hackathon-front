@@ -205,13 +205,45 @@ const validateConstraints = (constraints: ConstraintDTO[]) => {
 
 const handleSave = async () => {
   isSaving.value = true
+  errorMessage.value = ''
   try {
     const minSize = Number(matchmakingSettings.value.teamSizeMin)
     const maxSize = Number(matchmakingSettings.value.teamSizeMax)
     const maxTeamsPerSub = Number(matchmakingSettings.value.maxTeamsPerSubject)
 
+    if (!minSize || minSize < 1) {
+      errorMessage.value = `${t('matchmakingSettings.minTeamSize')} : ${t('matchmakingSettings.minSizeMustBePositive')}`
+      snackbarText.value = errorMessage.value
+      snackbarError.value = true
+      snackbar.value = true
+      isSaving.value = false
+      return
+    }
+
+    if (!maxSize || maxSize < minSize) {
+      errorMessage.value = `${t('matchmakingSettings.maxTeamSize')} : ${t('matchmakingSettings.maxSizeMustBeGreater')}`
+      snackbarText.value = errorMessage.value
+      snackbarError.value = true
+      snackbar.value = true
+      isSaving.value = false
+      return
+    }
+
     if (!maxTeamsPerSub || maxTeamsPerSub < 1) {
       errorMessage.value = `${t('matchmakingSettings.maxTeamsPerSubject')} : ${t('matchmakingSettings.valueMustBePositive')}`
+      snackbarText.value = errorMessage.value
+      snackbarError.value = true
+      snackbar.value = true
+      isSaving.value = false
+      return
+    }
+
+    const validationErrors = validateConstraints(matchmakingSettings.value.constraints)
+    if (validationErrors.length > 0) {
+      errorMessage.value = validationErrors.join(', ')
+      snackbarText.value = errorMessage.value
+      snackbarError.value = true
+      snackbar.value = true
       isSaving.value = false
       return
     }
@@ -240,14 +272,15 @@ const handleSave = async () => {
       }
     }
 
-    snackbarText.value = t('common.changesSaved')
+    snackbarText.value = t('matchmakingSettings.criteriaSaveSuccess') || t('common.changesSaved')
     snackbarError.value = false
     snackbar.value = true
 
     emit('saved', payload)
   } catch (e) {
     console.error('Error saving matchmaking settings:', e)
-    snackbarText.value = t('common.error')
+    errorMessage.value = t('matchmakingSettings.criteriaSaveError') || t('common.error')
+    snackbarText.value = errorMessage.value
     snackbarError.value = true
     snackbar.value = true
   } finally {
@@ -294,31 +327,20 @@ const updateConstraint = (index: number | undefined, updatedCriterion: Constrain
   <div
     class="rounded-xl transition-all relative"
     :class="[
-      bordered ? 'border-2 p-6 shadow-xs' : 'p-2',
-      isManual
-        ? 'bg-slate-100/90 dark:bg-slate-900/60 border-slate-300 dark:border-slate-700 opacity-60 pointer-events-none select-none'
-        : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700'
+      bordered ? 'border border-slate-200 dark:border-slate-700 p-6 shadow-sm' : 'p-2',
+      'bg-white dark:bg-slate-800'
     ]"
   >
     <!-- Card Header with Title and Save Button -->
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800 mb-6">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-700 mb-6">
       <div>
         <div class="flex items-center gap-3">
           <h2 v-if="!hideTitle" class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <v-icon color="primary" size="24">mdi-tune-vertical</v-icon>
             {{ title || t('organizer.teamManagement.configSectionTitle') }}
           </h2>
-          <v-chip
-            v-if="isManual"
-            color="grey-darken-1"
-            size="small"
-            prepend-icon="mdi-lock-outline"
-            variant="flat"
-          >
-            {{ t('organizer.teamManagement.modes.manual.notEditableBadge') }}
-          </v-chip>
         </div>
-        <p class="text-sm text-slate-500 mt-1">
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
           {{ t('matchmakingSettings.subtitle') }}
         </p>
       </div>
@@ -329,31 +351,42 @@ const updateConstraint = (index: number | undefined, updatedCriterion: Constrain
         prepend-icon="mdi-content-save"
         @click="handleSave"
         :loading="isSaving"
-        :disabled="isLoading || isSaving || isManual"
+        :disabled="isLoading || isSaving"
       >
         {{ t('common.saveChanges') }}
       </v-btn>
     </div>
 
+    <!-- Error Alert Banner -->
+    <v-alert
+      v-if="errorMessage"
+      type="error"
+      variant="tonal"
+      density="compact"
+      class="mb-6"
+      closable
+      @click:close="errorMessage = ''"
+    >
+      {{ errorMessage }}
+    </v-alert>
+
     <!-- Mode Context Alert Banner -->
     <div
       v-if="algorithmMode === 'new'"
-      class="mb-6 p-4 rounded-lg bg-purple-50 border border-purple-200 text-purple-900 flex items-start gap-3"
+      class="mb-6 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-100 flex items-start gap-3"
     >
-      <v-icon color="purple-darken-2" class="mt-0.5">mdi-creation-outline</v-icon>
+      <v-icon color="primary" class="mt-0.5">mdi-auto-fix</v-icon>
       <div class="text-sm">
         <span class="font-semibold">{{ t('organizer.teamManagement.modes.new.title') }} : </span>
         {{ t('organizer.teamManagement.modes.new.configNotice') }}
       </div>
     </div>
 
-
-
     <div
       v-else-if="algorithmMode === 'manual'"
-      class="mb-6 p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3"
+      class="mb-6 p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-100 flex items-start gap-3"
     >
-      <v-icon color="amber-darken-3" class="mt-0.5">mdi-account-edit-outline</v-icon>
+      <v-icon color="amber-darken-3" class="mt-0.5">mdi-information-outline</v-icon>
       <div class="text-sm">
         <span class="font-semibold">{{ t('organizer.teamManagement.modes.manual.title') }} : </span>
         {{ t('organizer.teamManagement.modes.manual.configNotice') }}
@@ -364,63 +397,60 @@ const updateConstraint = (index: number | undefined, updatedCriterion: Constrain
     <div class="space-y-6">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-1">
+          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
             {{ t('matchmakingSettings.minTeamSize') }} *
           </label>
           <v-text-field
-            v-model="matchmakingSettings.teamSizeMin"
+            v-model.number="matchmakingSettings.teamSizeMin"
             type="number"
             min="1"
             density="compact"
             variant="outlined"
             hide-details
-            :disabled="isManual"
             prepend-inner-icon="mdi-account-multiple-minus"
           ></v-text-field>
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-1">
+          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
             {{ t('matchmakingSettings.maxTeamSize') }} *
           </label>
           <v-text-field
-            v-model="matchmakingSettings.teamSizeMax"
+            v-model.number="matchmakingSettings.teamSizeMax"
             type="number"
             :min="matchmakingSettings.teamSizeMin"
             density="compact"
             variant="outlined"
             hide-details
-            :disabled="isManual"
             prepend-inner-icon="mdi-account-multiple-plus"
           ></v-text-field>
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-1">
+          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
             {{ t('matchmakingSettings.maxTeamsPerSubject') }} *
           </label>
           <v-text-field
-            v-model="matchmakingSettings.maxTeamsPerSubject"
+            v-model.number="matchmakingSettings.maxTeamsPerSubject"
             type="number"
             min="1"
             density="compact"
             variant="outlined"
             hide-details
-            :disabled="isManual"
             prepend-inner-icon="mdi-folder-account-outline"
           ></v-text-field>
         </div>
       </div>
 
       <!-- Constraints Section -->
-      <div class="pt-4 border-t border-slate-200 dark:border-slate-800">
+      <div class="pt-6 border-t border-slate-200 dark:border-slate-700">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
-            <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
               <v-icon size="20" color="primary">mdi-shield-check-outline</v-icon>
               {{ t('matchmakingSettings.constraint') }}
             </h3>
-            <p class="text-xs text-slate-500">
+            <p class="text-xs text-slate-500 dark:text-slate-400">
               {{ t('matchmakingSettings.schoolQuotaSubtitle') }}
             </p>
           </div>
@@ -430,26 +460,13 @@ const updateConstraint = (index: number | undefined, updatedCriterion: Constrain
             variant="tonal"
             size="small"
             prepend-icon="mdi-plus"
-            :disabled="isManual"
             @click="showCriterionForm = true"
           >
             {{ t('matchmakingSettings.addConstraintBtn') }}
           </v-btn>
         </div>
 
-        <v-alert
-          v-if="errorMessage"
-          type="error"
-          variant="tonal"
-          density="compact"
-          class="mb-4"
-          closable
-          @click:close="errorMessage = ''"
-        >
-          {{ errorMessage }}
-        </v-alert>
-
-        <div v-if="!hasConstraints" class="p-6 text-center bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-500 text-sm">
+        <div v-if="!hasConstraints" class="p-6 text-center bg-slate-50 dark:bg-slate-700/50 rounded-lg text-slate-500 dark:text-slate-400 text-sm">
           <v-icon size="36" class="mb-2 text-slate-400">mdi-clipboard-text-off-outline</v-icon>
           <p>{{ t('matchmakingSettings.noConstraints') }}</p>
         </div>
@@ -459,8 +476,7 @@ const updateConstraint = (index: number | undefined, updatedCriterion: Constrain
           :constraints="matchmakingSettings.constraints || []"
           :items-per-page="5"
           :school-names="schoolNames"
-          :max-team-size="matchmakingSettings.teamSizeMax"
-          :disabled="isManual"
+          :max-team-size="Number(matchmakingSettings.teamSizeMax)"
           @delete="deleteConstraint"
           @edit="updateConstraint"
         />

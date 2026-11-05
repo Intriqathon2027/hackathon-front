@@ -281,14 +281,14 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
         title: t('organizer.teamManagement.modes.manual.title'),
         description: t('organizer.teamManagement.modes.manual.description'),
         icon: 'mdi-account-edit-outline',
-        color: 'amber',
+        color: 'primary',
       },
       {
         value: 'new' as MatchmakingAlgorithm,
         title: t('organizer.teamManagement.modes.new.title'),
         description: t('organizer.teamManagement.modes.new.description'),
-        icon: 'mdi-creation-outline',
-        color: 'purple',
+        icon: 'mdi-auto-fix',
+        color: 'primary',
       },
     ]
   })
@@ -298,6 +298,36 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
       algorithmOptions.value.find((opt) => opt.value === selectedAlgorithm.value) ||
       algorithmOptions.value[0]
   )
+
+  const onAlgorithmChange = async (newAlgo: MatchmakingAlgorithm) => {
+    selectedAlgorithm.value = newAlgo
+    try {
+      const currentConfig = matchmakingConfig.value || {
+        isActive: true,
+        teamSizeMin: 1,
+        teamSizeMax: 4,
+        maxTeamsPerSubject: 2,
+        constraints: [],
+      }
+      const updated: MatchmakingSettingsDTO = {
+        ...currentConfig,
+        algorithm: newAlgo,
+      }
+      try {
+        await configurationService.update(ConfigurationKey.MATCHMAKING, { value: updated })
+      } catch (apiError) {
+        if (import.meta.env.DEV) {
+          localStorage.setItem(`config_${ConfigurationKey.MATCHMAKING}`, JSON.stringify(updated))
+        }
+      }
+      matchmakingConfig.value = updated
+      text.value = t('organizer.teamManagement.modeUpdated')
+      error.value = false
+      snackbar.value = true
+    } catch (e) {
+      console.warn('Could not save team creation mode:', e)
+    }
+  }
 
   const schools = ref<string[]>([])
 
@@ -710,68 +740,101 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
         </h1>
       </div>
 
-      <!-- 2. Algorithm Description (Left) & Mode Dropdown (Right) -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8 items-stretch">
-        <!-- Left: Algorithm Description -->
-        <div class="lg:col-span-8 bg-white dark:bg-slate-800 rounded-xl p-6 border-2 border-slate-300 dark:border-slate-700 shadow-xs flex flex-col justify-center">
-          <div class="flex items-center gap-3 mb-3">
-            <v-avatar :color="currentAlgorithm.color + '-lighten-5'" size="42" class="border">
-              <v-icon :color="currentAlgorithm.color + '-darken-2'" size="24">{{ currentAlgorithm.icon }}</v-icon>
-            </v-avatar>
-            <div>
-              <span class="text-xs uppercase tracking-wider font-semibold text-slate-400">{{ t('organizer.teamManagement.activeAlgorithm') }}</span>
-              <h3 class="text-lg font-bold text-slate-800 dark:text-white leading-tight">
-                {{ currentAlgorithm.title }}
-              </h3>
-            </div>
+      <!-- 2. Creation Type Choice Box & Description -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm mb-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          <!-- Left: Choice Box Selector -->
+          <div class="lg:col-span-5">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+              {{ t('organizer.teamManagement.modes.label') }}
+            </label>
+            <v-select
+              :model-value="selectedAlgorithm"
+              @update:model-value="onAlgorithmChange"
+              :items="algorithmOptions"
+              item-value="value"
+              item-title="title"
+              variant="outlined"
+              density="comfortable"
+              hide-details
+              class="w-full"
+            >
+              <template #selection="{ item }">
+                <div class="flex items-center gap-2.5">
+                  <v-icon color="primary" size="20">{{ item.raw.icon }}</v-icon>
+                  <span class="font-semibold text-slate-800 dark:text-white">{{ item.raw.title }}</span>
+                </div>
+              </template>
+              <template #item="{ item, props: itemProps }">
+                <v-list-item v-bind="itemProps" :title="undefined">
+                  <template #prepend>
+                    <v-icon color="primary" size="20" class="mr-3">{{ item.raw.icon }}</v-icon>
+                  </template>
+                  <v-list-item-title class="font-semibold text-sm">
+                    {{ item.raw.title }}
+                  </v-list-item-title>
+                </v-list-item>
+              </template>
+            </v-select>
           </div>
-          <p class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
-            {{ currentAlgorithm.description }}
-          </p>
-        </div>
 
-        <!-- Right: Mode Dropdown Selector -->
-        <div class="lg:col-span-4 bg-white dark:bg-slate-800 rounded-xl p-6 border-2 border-slate-300 dark:border-slate-700 shadow-xs flex flex-col">
-          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
-            {{ t('organizer.teamManagement.modes.label') }}
-          </label>
-          <v-select
-            v-model="selectedAlgorithm"
-            :items="algorithmOptions"
-            item-value="value"
-            item-title="title"
-            variant="outlined"
-            density="compact"
-            hide-details
-            class="mode-select flex-1"
-          >
-            <template #selection="{ item }">
-              <div class="flex items-center gap-2 w-full justify-center">
-                <v-icon :color="item.raw.color" size="20">{{ item.raw.icon }}</v-icon>
-                <span class="font-medium text-slate-800 dark:text-white">{{ item.raw.title }}</span>
-              </div>
-            </template>
-            <template #item="{ item, props: itemProps }">
-              <v-list-item v-bind="itemProps" :title="undefined">
-                <template #prepend>
-                  <v-icon :color="item.raw.color" size="20" class="mr-2">{{ item.raw.icon }}</v-icon>
-                </template>
-                <v-list-item-title class="font-medium text-sm">
-                  {{ item.raw.title }}
-                </v-list-item-title>
-              </v-list-item>
-            </template>
-          </v-select>
+          <!-- Right: Active Mode Summary & Description -->
+          <div class="lg:col-span-7 lg:border-l lg:border-slate-200 dark:lg:border-slate-700 lg:pl-6">
+            <div class="flex items-center gap-2 mb-1.5">
+              <span class="text-xs uppercase tracking-wider font-semibold text-slate-400 dark:text-slate-500">
+                {{ t('organizer.teamManagement.activeAlgorithm') }} :
+              </span>
+              <span class="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                <v-icon color="primary" size="18">{{ currentAlgorithm.icon }}</v-icon>
+                {{ currentAlgorithm.title }}
+              </span>
+            </div>
+            <p class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-0">
+              {{ currentAlgorithm.description }}
+            </p>
+          </div>
         </div>
       </div>
 
-      <!-- 3. Configuration of Selected Mode (Matchmaking) -->
-      <div class="mb-8">
+      <!-- 3. Configuration of Selected Mode (Matchmaking Criteria) -->
+      <!-- Automatic Mode: Directly displays the criteria configuration -->
+      <div v-if="selectedAlgorithm === 'new'" class="mb-8">
         <MatchmakingConfig
           :algorithm-mode="selectedAlgorithm"
           @update:algorithm-mode="(mode) => (selectedAlgorithm = mode)"
           @saved="onMatchmakingConfigSaved"
         />
+      </div>
+
+      <!-- Manual Mode: Informative Banner & Expandable Criteria / Constraints Panel -->
+      <div v-else-if="selectedAlgorithm === 'manual'" class="mb-8 space-y-4">
+        <div class="p-4 rounded-xl bg-blue-50/70 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-100 flex items-start gap-3">
+          <v-icon color="primary" class="mt-0.5">mdi-information-outline</v-icon>
+          <div class="text-sm">
+            <span class="font-semibold">{{ t('organizer.teamManagement.modes.manual.title') }} : </span>
+            {{ t('organizer.teamManagement.modes.manual.configNotice') }}
+          </div>
+        </div>
+
+        <v-expansion-panels class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
+          <v-expansion-panel elevation="0">
+            <v-expansion-panel-title class="text-sm font-semibold text-slate-700 dark:text-slate-200 py-3">
+              <div class="flex items-center gap-2">
+                <v-icon size="20" color="primary">mdi-tune-vertical</v-icon>
+                <span>{{ t('organizer.teamManagement.configSectionTitle') }}</span>
+              </div>
+            </v-expansion-panel-title>
+            <v-expansion-panel-text class="pt-2">
+              <MatchmakingConfig
+                :algorithm-mode="selectedAlgorithm"
+                :bordered="false"
+                hide-title
+                @update:algorithm-mode="(mode) => (selectedAlgorithm = mode)"
+                @saved="onMatchmakingConfigSaved"
+              />
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
       </div>
 
       <!-- 4. In-line Action Buttons: Create repos, Create Team(s) & Delete teams -->
@@ -1037,31 +1100,3 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
     </v-dialog>
   </v-container>
 </template>
-
-<style scoped>
-.mode-select {
-  width: 100%;
-}
-
-.mode-select :deep(.v-input__control) {
-  height: 100%;
-}
-
-.mode-select :deep(.v-field) {
-  height: 100%;
-  display: flex;
-  align-items: center;
-}
-
-.mode-select :deep(.v-field__input) {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-top: 0;
-  padding-bottom: 0;
-}
-
-.mode-select :deep(.v-field__append-inner) {
-  align-items: center;
-}
-</style>
