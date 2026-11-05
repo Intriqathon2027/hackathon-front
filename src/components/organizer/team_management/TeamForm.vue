@@ -5,8 +5,10 @@
   import { UserReducedDTO } from '@/types/user'
   import { ThemesDTO } from '@/types/config'
   import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+  import { useTeamStore } from '@/stores/teamStore'
 
   const { t } = useI18n()
+  const teamStore = useTeamStore()
 
   // -----------------------------
   // Props & Emits
@@ -111,9 +113,25 @@
   }
 
   // ----------------------------------
-  // Initialize form when dialog opens
+  // Filter members (only unassigned users, plus current team members in edit mode)
   // ----------------------------------
-  const filteredMembers = ref<UserReducedDTO[]>(props.members)
+  const isUserAssignedToOtherTeam = (user: UserReducedDTO, currentTeamId?: string | null): boolean => {
+    if (user.teamId && (!currentTeamId || user.teamId !== currentTeamId)) {
+      return true
+    }
+    if (user.team?.id && (!currentTeamId || user.team.id !== currentTeamId)) {
+      return true
+    }
+    return teamStore.teams.some(
+      (team) => (!currentTeamId || team.id !== currentTeamId) && team.members?.some((m) => m.id === user.id)
+    )
+  }
+
+  const filteredMembers = computed<UserReducedDTO[]>(() => {
+    const currentTeamId = props.editMode && props.team ? props.team.id : null
+    return props.members.filter((u) => !isUserAssignedToOtherTeam(u, currentTeamId))
+  })
+
   watch(
     localModelValue,
     (open) => {
@@ -131,10 +149,8 @@
           mentorIds: (props.team.mentors ?? []).map((u) => u.id),
           juryIds: (props.team.juries ?? []).map((u) => u.id),
         }
-        filteredMembers.value = props.members // garder la liste complète
       } else {
         resetForm()
-        filteredMembers.value = props.members.filter((u) => !u.teamId)
       }
     },
     { immediate: true }

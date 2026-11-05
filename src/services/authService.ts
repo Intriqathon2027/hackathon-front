@@ -61,7 +61,7 @@ supabase.auth.onAuthStateChange((event, session) => {
 
   if (session) {
     authStore.updateAccessToken(session.access_token)
-  } else {
+  } else if (event === 'SIGNED_OUT') {
     authStore.logout()
   }
 })

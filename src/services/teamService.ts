@@ -49,7 +49,23 @@ export const teamService = {
   },
 
   async delete(teamId: string): Promise<void> {
-    await axios.delete(`${API_URL}/${teamId}`, { headers: getAuthHeaders() })
+    try {
+      await axios.delete(`${API_URL}/${teamId}`, { headers: getAuthHeaders() })
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.warn(`[DEV] Backend delete failed or offline for team ${teamId}, continuing with local update:`, error)
+        return
+      }
+      throw error
+    }
+  },
+
+  async deleteAll(teamIds: string[]): Promise<void> {
+    const batchSize = 5
+    for (let i = 0; i < teamIds.length; i += batchSize) {
+      const batch = teamIds.slice(i, i + batchSize)
+      await Promise.all(batch.map((id) => this.delete(id)))
+    }
   },
 
   async updateStatus(teamId: string, status: TeamStatus): Promise<TeamDTO> {
