@@ -778,17 +778,8 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
             </v-select>
           </div>
 
-          <!-- Right: Active Mode Summary & Description -->
+          <!-- Right: Description of the active mode -->
           <div class="lg:col-span-7 lg:border-l lg:border-slate-200 lg:pl-6">
-            <div class="flex items-center gap-2 mb-1.5">
-              <span class="text-xs uppercase tracking-wider font-semibold text-slate-500">
-                {{ t('organizer.teamManagement.activeAlgorithm') }} :
-              </span>
-              <span class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                <v-icon color="primary" size="18">{{ currentAlgorithm.icon }}</v-icon>
-                {{ currentAlgorithm.title }}
-              </span>
-            </div>
             <p class="text-slate-600 text-sm leading-relaxed mb-0">
               {{ currentAlgorithm.description }}
             </p>
@@ -806,16 +797,8 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
         />
       </div>
 
-      <!-- Manual Mode: Informative Banner & Expandable Criteria / Constraints Panel -->
+      <!-- Manual Mode: Expandable Criteria / Constraints Panel -->
       <div v-else-if="selectedAlgorithm === 'manual'" class="mb-8 space-y-4">
-        <div class="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-950 flex items-start gap-3">
-          <v-icon color="primary" class="mt-0.5">mdi-information-outline</v-icon>
-          <div class="text-sm text-blue-950">
-            <span class="font-semibold">{{ t('organizer.teamManagement.modes.manual.title') }} : </span>
-            {{ t('organizer.teamManagement.modes.manual.configNotice') }}
-          </div>
-        </div>
-
         <v-expansion-panels class="rounded-xl overflow-hidden border border-slate-200">
           <v-expansion-panel elevation="0">
             <v-expansion-panel-title class="text-sm font-semibold text-slate-800 py-3">

@@ -370,14 +370,13 @@ const updateConstraint = (index: number | undefined, updatedCriterion: Constrain
       {{ errorMessage }}
     </v-alert>
 
-    <!-- Mode Context Alert Banner -->
+    <!-- Criteria context notice -->
     <div
       v-if="algorithmMode === 'new'"
       class="mb-6 p-4 rounded-lg bg-blue-50 border border-blue-200 text-blue-950 flex items-start gap-3"
     >
       <v-icon color="primary" class="mt-0.5">mdi-auto-fix</v-icon>
       <div class="text-sm text-blue-950">
-        <span class="font-semibold text-blue-950">{{ t('organizer.teamManagement.modes.new.title') }} : </span>
         {{ t('organizer.teamManagement.modes.new.configNotice') }}
       </div>
     </div>
@@ -388,7 +387,6 @@ const updateConstraint = (index: number | undefined, updatedCriterion: Constrain
     >
       <v-icon color="amber-darken-3" class="mt-0.5">mdi-information-outline</v-icon>
       <div class="text-sm text-amber-950">
-        <span class="font-semibold text-amber-950">{{ t('organizer.teamManagement.modes.manual.title') }} : </span>
         {{ t('organizer.teamManagement.modes.manual.configNotice') }}
       </div>
     </div>
