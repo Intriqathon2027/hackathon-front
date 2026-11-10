@@ -67,12 +67,12 @@ import { TeamStatus } from '@/types/team_status'
   }
 
   const getEligibleTeamsToAssign = () => {
-    if (!selectedUserId.value || !props.config) return []
+    if (!selectedUserId.value) return []
     const user = props.users.find((u) => u.id === selectedUserId.value)
     if (user?.role) {
       switch (user.role) {
         case UserRole.PARTICIPANT:
-          return getEligibleTeamsForUser(props.teams, user, props.config)
+          return props.teams.filter((t) => t.id !== user.teamId && t.status === TeamStatus.UNLOCKED)
         case UserRole.MENTOR:
           return props.teams.filter((t) => !user.mentorTeams?.some((ut) => ut.id === t.id) && t.status === TeamStatus.UNLOCKED)
         case UserRole.JURY:

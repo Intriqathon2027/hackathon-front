@@ -25,9 +25,24 @@ const selectedTeamId = ref<string | null>(null)
 watch(
   () => props.teams,
   (teams) => {
-    if (teams.length === 1) selectedTeamId.value = teams[0].id
+    if (teams.length === 1) {
+      selectedTeamId.value = teams[0]?.id ?? null
+    }
   },
   { immediate: true }
+)
+
+watch(
+  () => props.modelValue,
+  (isOpen) => {
+    if (isOpen) {
+      if (props.teams.length === 1) {
+        selectedTeamId.value = props.teams[0]?.id ?? null
+      } else {
+        selectedTeamId.value = null
+      }
+    }
+  }
 )
 
 const selectedTeam = computed(() =>
@@ -45,7 +60,7 @@ const dialogTitle = computed(() =>
 )
 
 const isConfirmDisabled = computed(
-  () => !selectedTeam.value && props.teams.length > 1
+  () => !selectedTeam.value
 )
 
 const confirmAction = () => {
@@ -75,7 +90,9 @@ const cancelAction = () => {
           </p>
         </template>
 
-        <template v-else-if="teams.length > 1">
+
+
+        <template v-else>
           <v-select
             v-model="selectedTeamId"
             :items="teams"
@@ -85,13 +102,6 @@ const cancelAction = () => {
             outlined
             dense
           />
-        </template>
-
-        <template v-else-if="teams.length === 1">
-          <p>
-            {{ t('organizer.teamManagement.selectedTeam') }} :
-            <strong>{{ teams[0].name }}</strong>
-          </p>
         </template>
       </v-card-text>
 

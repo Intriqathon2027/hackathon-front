@@ -71,17 +71,17 @@
 </script>
 
 <template>
-  <div class="bg-white border rounded-lg overflow-x-auto">
-    <table class="min-w-full text-sm">
+  <div class="bg-white border border-slate-200 rounded-lg overflow-x-auto">
+    <table class="min-w-full text-sm text-slate-900">
       <thead>
-        <tr class="border-b">
-          <th class="px-4 py-2 text-left font-semibold">
+        <tr class="border-b border-slate-200 bg-slate-50">
+          <th class="px-4 py-2.5 text-left font-semibold text-slate-800">
             {{ t('matchmakingSettings.schools') }}
           </th>
-          <th class="px-4 py-2 text-left font-semibold">
+          <th class="px-4 py-2.5 text-left font-semibold text-slate-800">
             {{ t('matchmakingSettings.rule') }}
           </th>
-          <th class="px-4 py-2 text-center font-semibold">
+          <th class="px-4 py-2.5 text-center font-semibold text-slate-800">
             {{ t('common.actions') }}
           </th>
         </tr>
@@ -90,7 +90,7 @@
         <tr
           v-for="(criterion, index) in paginatedCriteria"
           :key="criterion.schools.join('-') + '-' + index"
-          class="border-b"
+          class="border-b border-slate-200 hover:bg-slate-50 transition-colors text-slate-800"
         >
           <td class="px-4 py-2">
             {{ criterion.schools.join(', ') }}
@@ -106,8 +106,11 @@
               size="small"
               :disabled="props.disabled"
               @click.stop="
-                showEditForm = true ;
-                editedConstraint = { ...criterion, index }
+                showEditForm = true;
+                editedConstraint = {
+                  ...criterion,
+                  index: (currentPage - 1) * itemsPerPage + index,
+                }
               "
             />
             <v-btn

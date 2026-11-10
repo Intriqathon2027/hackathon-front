@@ -40,11 +40,30 @@ export function filterUsers(
   userTeamStatus: string,
   filterName: string,
   role?: UserRole | '',
-  school?: string
+  school?: string,
+  teams?: TeamDTO[]
 ) {
   const nameQuery = filterName.toLowerCase()
 
-  return users.filter(user => {
+  const hasTeam = (user: UserReducedDTO): boolean => {
+    if (user.teamId || user.team) return true
+    if (user.juryTeams && user.juryTeams.length > 0) return true
+    if (user.mentorTeams && user.mentorTeams.length > 0) return true
+    if (
+      teams &&
+      teams.some(
+        (t) =>
+          t.members?.some((m) => m.id === user.id) ||
+          t.mentors?.some((m) => m.id === user.id) ||
+          t.juries?.some((j) => j.id === user.id)
+      )
+    ) {
+      return true
+    }
+    return false
+  }
+
+  return users.filter((user) => {
     // Name filter
     const matchesName =
       !filterName ||
@@ -53,8 +72,9 @@ export function filterUsers(
     // Individual filters
     let matchesUserStatus = true
     if (userTeamStatus) {
-      if (userTeamStatus === 'withTeam') matchesUserStatus = !!user.teamId
-      if (userTeamStatus === 'withoutTeam') matchesUserStatus = !user.teamId
+      const userHasTeam = hasTeam(user)
+      if (userTeamStatus === 'withTeam') matchesUserStatus = userHasTeam
+      if (userTeamStatus === 'withoutTeam') matchesUserStatus = !userHasTeam
     }
 
     let matchesRole = true

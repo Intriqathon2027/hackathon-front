@@ -5,16 +5,23 @@
   import { useI18n } from 'vue-i18n'
   import { TeamConstraintViolation } from '@/types/config'
   import { usePagination } from '@/composables/usePagination'
-  import { toRef } from 'vue'
+  import { toRef, computed } from 'vue'
 
   const { t } = useI18n()
 
-  const props = defineProps<{
-    teams: TeamDTO[]
-    themes: ThemesDTO[]
-    itemsPerPage?: number
-    constraintsMap?: Record<string, TeamConstraintViolation[]>
-  }>()
+  const props = withDefaults(
+    defineProps<{
+      teams: TeamDTO[]
+      themes: ThemesDTO[]
+      itemsPerPage?: number
+      constraintsMap?: Record<string, TeamConstraintViolation[]>
+      selectedTeamIds?: string[]
+    }>(),
+    {
+      itemsPerPage: 10,
+      selectedTeamIds: () => [],
+    }
+  )
 
   const teamsRef = toRef(props, 'teams')
 
@@ -23,12 +30,58 @@
     (e: 'delete', teamId: string): void
     (e: 'toggle-lock', status: TeamStatus, teamId: string): void
     (e: 'toggle-constraints', ignoreConstraints: boolean, teamId: string): void
+    (e: 'update:selectedTeamIds', ids: string[]): void
   }>()
 
   const { currentPage, totalPages, paginatedItems, goToPage } = usePagination(
     teamsRef,
     props.itemsPerPage || 10
   )
+
+  // Selection logic
+  const isAllSelected = computed(() => {
+    return (
+      props.teams.length > 0 &&
+      props.teams.every((team) => props.selectedTeamIds.includes(team.id))
+    )
+  })
+
+  const isIndeterminate = computed(() => {
+    return (
+      !isAllSelected.value &&
+      props.teams.some((team) => props.selectedTeamIds.includes(team.id))
+    )
+  })
+
+  const onToggleSelectAll = () => {
+    if (isAllSelected.value) {
+      const currentTeamIdSet = new Set(props.teams.map((t) => t.id))
+      emit(
+        'update:selectedTeamIds',
+        props.selectedTeamIds.filter((id) => !currentTeamIdSet.has(id))
+      )
+    } else {
+      const mergedIds = new Set([...props.selectedTeamIds, ...props.teams.map((t) => t.id)])
+      emit('update:selectedTeamIds', Array.from(mergedIds))
+    }
+  }
+
+  const onToggleSelectTeam = (teamId: string, selected: boolean) => {
+    if (selected) {
+      if (!props.selectedTeamIds.includes(teamId)) {
+        emit('update:selectedTeamIds', [...props.selectedTeamIds, teamId])
+      }
+    } else {
+      emit(
+        'update:selectedTeamIds',
+        props.selectedTeamIds.filter((id) => id !== teamId)
+      )
+    }
+  }
+
+  const isTeamSelected = (teamId: string) => {
+    return props.selectedTeamIds.includes(teamId)
+  }
 
   const formatViolationMessage = (violation: TeamConstraintViolation) => {
     const message = t(`matchmakingViolations.${violation.type}`, {
@@ -74,10 +127,22 @@
 </script>
 
 <template>
-  <div class="bg-white border rounded-lg overflow-x-auto">
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-x-auto shadow-xs">
     <table class="min-w-full text-sm">
       <thead>
-        <tr class="border-b">
+        <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+          <th class="px-3 py-2 w-12 text-center">
+            <div class="flex justify-center items-center">
+              <v-checkbox
+                :model-value="isAllSelected"
+                :indeterminate="isIndeterminate"
+                hide-details
+                density="compact"
+                @update:model-value="onToggleSelectAll"
+                :title="t('organizer.teamManagement.actions.selectAll')"
+              />
+            </div>
+          </th>
           <th class="px-4 py-2 text-left font-semibold">
             {{ t('organizer.teamManagement.name') }}
           </th>
@@ -99,8 +164,23 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="team in paginatedItems" :key="team.id" class="border-b">
-          <td class="px-4 py-2">{{ team.name }}</td>
+        <tr
+          v-for="team in paginatedItems"
+          :key="team.id"
+          class="border-b border-slate-200 dark:border-slate-800 transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
+          :class="{ 'bg-blue-50/50 dark:bg-blue-950/20': isTeamSelected(team.id) }"
+        >
+          <td class="px-3 py-2 text-center" @click.stop>
+            <div class="flex justify-center items-center">
+              <v-checkbox
+                :model-value="isTeamSelected(team.id)"
+                hide-details
+                density="compact"
+                @update:model-value="(val) => onToggleSelectTeam(team.id, !!val)"
+              />
+            </div>
+          </td>
+          <td class="px-4 py-2 font-medium">{{ team.name }}</td>
           <td class="px-4 py-2">
             <div v-for="member in team.members" :key="member.id">
               {{ member.firstname }} {{ member.lastname }}
@@ -116,7 +196,7 @@
             <div class="font-medium">
               {{ getTheme(team.subjectId) }}
             </div>
-            <div class="text-sm text-gray-600">
+            <div class="text-sm text-gray-600 dark:text-gray-400">
               {{ getSubject(team.subjectId) }}
             </div>
           </td>
@@ -153,7 +233,7 @@
             {{ t(`organizer.teamManagement.status.${team.status}`) }}
           </td>
           <td class="px-4 py-2 text-center">
-            <div class="flex flex-col justify-center items-center gap-2">
+            <div class="flex flex-row flex-wrap justify-center items-center gap-1.5">
               <!-- Lock / Unlock -->
               <v-btn
                 icon
@@ -181,6 +261,18 @@
                 v-if="team.status === TeamStatus.UNLOCKED"
               >
                 <v-icon>mdi-pencil-outline</v-icon>
+              </v-btn>
+
+              <!-- Delete single team -->
+              <v-btn
+                icon
+                size="small"
+                color="error"
+                @click="emit('delete', team.id)"
+                :title="t('organizer.teamManagement.actions.deleteTeam')"
+                v-if="team.status === TeamStatus.UNLOCKED"
+              >
+                <v-icon>mdi-delete-outline</v-icon>
               </v-btn>
 
               <!-- Ignore Constraints -->
@@ -230,3 +322,13 @@
     ></v-btn>
   </div>
 </template>
+
+<style scoped>
+:deep(.v-selection-control) {
+  min-height: unset;
+}
+:deep(.v-selection-control__wrapper) {
+  width: 24px;
+  height: 24px;
+}
+</style>
