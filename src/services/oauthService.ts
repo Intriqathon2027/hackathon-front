@@ -1,44 +1,81 @@
 import { useAuthStore } from '@/stores/auth'
 
-export function loginDiscord(organizerPlatform: boolean = false, userId: string) {
-    const clientId = import.meta.env.VITE_DISCORD_CLIENT_ID;
-    const redirectUri = encodeURIComponent(import.meta.env.VITE_DISCORD_REDIRECT_URI);
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? ''
 
-    const supabaseUserId = useAuthStore().user?.supabaseUserId;
+function getAuthHeaders(): HeadersInit {
+  const authStore = useAuthStore() as { token?: string; session?: { access_token?: string } }
+  const token = authStore.token ?? authStore.session?.access_token
 
-if (!supabaseUserId) {
-  console.error('supabaseUserId is undefined! Cannot login with Discord.');
-  return;
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
 }
 
-const state = encodeURIComponent(JSON.stringify({
-  supabaseUserId,
-  userId,
-  organizerPlatform,
-}));
+export function loginDiscord(organizerPlatform: boolean = false, userId: string) {
+  const clientId = import.meta.env.VITE_DISCORD_CLIENT_ID
+  const redirectUri = encodeURIComponent(import.meta.env.VITE_DISCORD_REDIRECT_URI)
 
-    window.location.href = 
-        `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=identify&state=${state}`;
+  const supabaseUserId = useAuthStore().user?.supabaseUserId
+
+  if (!supabaseUserId) {
+    console.error('supabaseUserId is undefined! Cannot login with Discord.')
+    return
+  }
+
+  const state = encodeURIComponent(
+    JSON.stringify({
+      supabaseUserId,
+      userId,
+      organizerPlatform,
+    }),
+  )
+
+  window.location.href = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=identify&state=${state}`
 }
 
 export function loginGitHub(organizerPlatform: boolean = false, userId: string) {
-    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
-    const redirectUri = encodeURIComponent(import.meta.env.VITE_GITHUB_REDIRECT_URI);
-    
-    const supabaseUserId = useAuthStore().user?.supabaseUserId;
+  const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID
+  const redirectUri = encodeURIComponent(import.meta.env.VITE_GITHUB_REDIRECT_URI)
+
+  const supabaseUserId = useAuthStore().user?.supabaseUserId
 
   if (!supabaseUserId) {
-    console.error('supabaseUserId is undefined! Cannot login with GitHub.');
-    return;
+    console.error('supabaseUserId is undefined! Cannot login with GitHub.')
+    return
   }
 
-  const state = encodeURIComponent(JSON.stringify({
-    supabaseUserId,
-    userId,
-    organizerPlatform,
-  }));
+  const state = encodeURIComponent(
+    JSON.stringify({
+      supabaseUserId,
+      userId,
+      organizerPlatform,
+    }),
+  )
 
-  const scopes = "read:user repo repo:invite user:email";
-  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes}`;
-  window.location.href = `${githubAuthUrl}&state=${state}`;
+  const scopes = 'read:user repo repo:invite user:email'
+  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes}`
+  window.location.href = `${githubAuthUrl}&state=${state}`
+}
+
+export async function unlinkDiscord(userId: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/auth/discord/${userId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to unlink Discord account (${response.status})`)
+  }
+}
+
+export async function unlinkGitHub(userId: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/auth/github/${userId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to unlink GitHub account (${response.status})`)
+  }
 }
