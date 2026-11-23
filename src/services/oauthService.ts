@@ -67,7 +67,7 @@ export async function unlinkDiscord(userId: string): Promise<void> {
     console.error("URL de l'API manquante : vérifie le nom de la variable dans le fichier .env")
   }
 
-  const response = await fetch(`${VITE_API_URL}/auth/discord/${userId}`, {
+  const response = await fetch(`${VITE_API_URL}/api/auth/discord/${userId}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
   })
@@ -82,7 +82,7 @@ export async function unlinkGitHub(userId: string): Promise<void> {
     console.error("URL de l'API manquante : vérifie le nom de la variable dans le fichier .env")
   }
 
-  const response = await fetch(`${VITE_API_URL}/auth/github/${userId}`, {
+  const response = await fetch(`${VITE_API_URL}/api/auth/github/${userId}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
   })
