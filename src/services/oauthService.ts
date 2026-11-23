@@ -1,6 +1,10 @@
 import { useAuthStore } from '@/stores/auth'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? ''
+const VITE_API_URL =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
+  import.meta.env.VITE_VITE_API_URL ||
+  ''
 
 function getAuthHeaders(): HeadersInit {
   const authStore = useAuthStore() as { token?: string; session?: { access_token?: string } }
@@ -59,7 +63,11 @@ export function loginGitHub(organizerPlatform: boolean = false, userId: string) 
 }
 
 export async function unlinkDiscord(userId: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/auth/discord/${userId}`, {
+  if (!VITE_API_URL) {
+    console.error("URL de l'API manquante : vérifie le nom de la variable dans le fichier .env")
+  }
+
+  const response = await fetch(`${VITE_API_URL}/auth/discord/${userId}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
   })
@@ -70,7 +78,11 @@ export async function unlinkDiscord(userId: string): Promise<void> {
 }
 
 export async function unlinkGitHub(userId: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/auth/github/${userId}`, {
+  if (!VITE_API_URL) {
+    console.error("URL de l'API manquante : vérifie le nom de la variable dans le fichier .env")
+  }
+
+  const response = await fetch(`${VITE_API_URL}/auth/github/${userId}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
   })
