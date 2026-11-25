@@ -25,7 +25,7 @@ export function loginDiscord(organizerPlatform: boolean = false, userId: string)
     }),
   )
 
-  window.location.href = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=identify&state=${state}`
+  window.location.href = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=identify&prompt=consent&state=${state}`
 }
 
 export function loginGitHub(organizerPlatform: boolean = false, userId: string) {
@@ -48,7 +48,7 @@ export function loginGitHub(organizerPlatform: boolean = false, userId: string) 
   )
 
   const scopes = 'read:user repo repo:invite user:email'
-  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes}`
+  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes}&prompt=select_account`
   window.location.href = `${githubAuthUrl}&state=${state}`
 }
 
