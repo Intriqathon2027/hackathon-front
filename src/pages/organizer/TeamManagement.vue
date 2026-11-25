@@ -821,32 +821,36 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
       </div>
 
       <!-- 4. In-line Action Buttons: Create repos, Create Team(s) & Delete teams -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
         <!-- Button 1: Create repos -->
         <v-btn
           color="black"
           size="large"
-          class="h-12 text-base font-semibold"
+          class="h-12 font-semibold action-btn w-full"
           @click="confirmInitializeRepos"
           :loading="isInitializingRepos"
           :disabled="loadingTeams || isDeletingAllTeams || isDeletingSelectedTeams"
         >
-          <v-icon start size="22">mdi-github</v-icon>
-          {{ t('organizer.teamManagement.actions.createRepos') }}
+          <v-icon start size="20" class="flex-shrink-0">mdi-github</v-icon>
+          <span>{{ t('organizer.teamManagement.actions.createRepos') }}</span>
         </v-btn>
 
         <!-- Button 2: Create Team(s) -->
-        <div class="flex gap-2">
+        <div class="flex gap-2 min-w-0 w-full">
           <v-btn
             color="primary"
             size="large"
-            class="h-12 text-base font-semibold flex-1"
+            class="h-12 font-semibold flex-1 min-w-0 action-btn"
             @click="handleCreateTeams"
             :loading="autogenerating"
             :disabled="loadingTeams || isDeletingAllTeams || isDeletingSelectedTeams"
           >
-            <v-icon start size="22">{{ selectedAlgorithm === 'manual' ? 'mdi-account-plus' : 'mdi-auto-fix' }}</v-icon>
-            {{ selectedAlgorithm === 'manual' ? t('organizer.teamManagement.actions.add') : t('organizer.teamManagement.actions.createTeams') }}
+            <v-icon start size="20" class="flex-shrink-0">
+              {{ selectedAlgorithm === 'manual' ? 'mdi-account-plus' : 'mdi-auto-fix' }}
+            </v-icon>
+            <span>
+              {{ selectedAlgorithm === 'manual' ? t('organizer.teamManagement.actions.add') : t('organizer.teamManagement.actions.createTeams') }}
+            </span>
           </v-btn>
 
           <!-- Secondary manual add button in auto mode so organizer is never blocked -->
@@ -855,7 +859,7 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
             color="primary"
             variant="tonal"
             size="large"
-            class="h-12 px-3"
+            class="h-12 px-3 flex-shrink-0"
             @click="onAddTeam"
             :title="t('organizer.teamManagement.actions.createTeamManual')"
             :disabled="loadingTeams || isDeletingAllTeams || isDeletingSelectedTeams"
@@ -869,13 +873,13 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
           color="error"
           variant="outlined"
           size="large"
-          class="h-12 text-base font-semibold border-2 w-full"
+          class="h-12 font-semibold border-2 w-full min-w-0 action-btn"
           @click="confirmDeleteAllTeams"
           :loading="isDeletingAllTeams"
           :disabled="loadingTeams || isDeletingAllTeams || isDeletingSelectedTeams || teams.length === 0"
         >
-          <v-icon start size="22">mdi-delete-sweep-outline</v-icon>
-          {{ t('organizer.teamManagement.actions.deleteAllTeams') }}
+          <v-icon start size="20" class="flex-shrink-0">mdi-delete-sweep-outline</v-icon>
+          <span>{{ t('organizer.teamManagement.actions.deleteAllTeams') }}</span>
         </v-btn>
       </div>
 
@@ -1083,3 +1087,11 @@ import MatchmakingConfig from '@/components/organizer/matchmaking/MatchmakingCon
     </v-dialog>
   </v-container>
 </template>
+<style scoped>
+.action-btn {
+  min-width: 0;
+  padding: 0 12px;
+  font-size: clamp(0.75rem, 1vw, 0.9rem);
+  letter-spacing: 0.04em;
+}
+</style>

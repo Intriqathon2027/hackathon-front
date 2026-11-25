@@ -174,6 +174,7 @@ const confirmDeleteAccount = () => showConfirmDeleteAccountDialog.value = true
           :user="userInfo"
           :edit-mode="editMode"
           :adminPlatform="isAdminPlatform"
+          @update:user="(updated) => { userInfo = updated; authStore.updateUserFields(updated) }"
         />
       </v-col>
     </v-row>
