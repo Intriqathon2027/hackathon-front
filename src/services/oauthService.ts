@@ -1,20 +1,10 @@
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore, getAuthHeaders } from '@/stores/auth'
 
 const VITE_API_URL =
   import.meta.env.VITE_API_URL ||
   import.meta.env.VITE_BACKEND_URL ||
   import.meta.env.VITE_VITE_API_URL ||
   ''
-
-function getAuthHeaders(): HeadersInit {
-  const authStore = useAuthStore() as { token?: string; session?: { access_token?: string } }
-  const token = authStore.token ?? authStore.session?.access_token
-
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  }
-}
 
 export function loginDiscord(organizerPlatform: boolean = false, userId: string) {
   const clientId = import.meta.env.VITE_DISCORD_CLIENT_ID
